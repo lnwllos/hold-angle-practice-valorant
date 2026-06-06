@@ -191,3 +191,14 @@ test('blindDuration scales max blind by factor', () => {
   assert.strictEqual(L.blindDuration(2.0, 0), 0);
   assert.ok(Math.abs(L.blindDuration(1.75, 0.5) - 0.875) < 1e-9);
 });
+
+test('flashOverlayOpacity ramps up, then decays, then zero', () => {
+  assert.strictEqual(L.flashOverlayOpacity(0, 1.0, 0.05), 0);
+  assert.ok(Math.abs(L.flashOverlayOpacity(0.025, 1.0, 0.05) - 0.5) < 1e-9); // mid ramp-up
+  assert.ok(Math.abs(L.flashOverlayOpacity(0.05, 1.0, 0.05) - 1) < 1e-9);    // peak
+  assert.strictEqual(L.flashOverlayOpacity(1.0, 1.0, 0.05), 0);              // exactly end
+  assert.strictEqual(L.flashOverlayOpacity(1.5, 1.0, 0.05), 0);             // past end
+  assert.strictEqual(L.flashOverlayOpacity(0.5, 0, 0.05), 0);              // zero duration
+  // halfway through decay: decaySpan=0.95, remain=0.475 -> elapsed=0.525 -> 0.5
+  assert.ok(Math.abs(L.flashOverlayOpacity(0.525, 1.0, 0.05) - 0.5) < 1e-9);
+});

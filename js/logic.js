@@ -75,6 +75,16 @@ function blindDuration(maxBlind, factor) {
   return maxBlind * factor;
 }
 
+// White-overlay opacity for the current frame: 0->1 over rampUp, then linear 1->0 over the
+// rest of duration, 0 once finished.
+function flashOverlayOpacity(elapsed, duration, rampUp) {
+  if (duration <= 0 || elapsed < 0 || elapsed >= duration) return 0;
+  if (rampUp > 0 && elapsed < rampUp) return elapsed / rampUp;
+  const decaySpan = duration - rampUp;
+  if (decaySpan <= 0) return 1;
+  return Math.max(0, Math.min(1, (duration - elapsed) / decaySpan));
+}
+
 // --- Shot timing feedback ---
 // This is position-based, not reaction-ms based:
 // - hidden/not yet visible: early
@@ -134,6 +144,7 @@ if (typeof module !== 'undefined' && module.exports) {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
     sampleSpawnDelay, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
+    flashOverlayOpacity,
     classifyShotTimingByPeek, classifyShotTimingByLateral,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
