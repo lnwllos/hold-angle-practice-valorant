@@ -56,14 +56,32 @@
       if (hint) hint.textContent = 'Pointer lock is blocked in this preview. Open index.html or start.bat in your browser to play.';
     }
 
-    b.addEventListener('click', () => {
-      if (hint) hint.textContent = 'Click to play · ESC for settings';
+    // Request RAW mouse input (no OS pointer acceleration) so fast flicks map 1:1,
+    // like Valorant's raw input. Without unadjustedMovement, Windows "Enhance pointer
+    // precision" scales fast swings non-linearly, which makes the view feel like it
+    // jumps/warps the faster you turn. Falls back to default input where unsupported.
+    function requestLock(raw) {
+      let pending;
       try {
-        const pending = lockTarget.requestPointerLock();
-        if (pending && typeof pending.catch === 'function') pending.catch(showPointerLockFallback);
+        pending = raw
+          ? lockTarget.requestPointerLock({ unadjustedMovement: true })
+          : lockTarget.requestPointerLock();
       } catch (e) {
         showPointerLockFallback();
+        return;
       }
+      if (pending && typeof pending.then === 'function') {
+        pending.catch(err => {
+          // Raw input unsupported on this browser/OS -> retry with default input.
+          if (raw && err && err.name === 'NotSupportedError') requestLock(false);
+          else showPointerLockFallback();
+        });
+      }
+    }
+
+    b.addEventListener('click', () => {
+      if (hint) hint.textContent = 'Click to play · ESC for settings';
+      requestLock(true);
     });
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement != null;
