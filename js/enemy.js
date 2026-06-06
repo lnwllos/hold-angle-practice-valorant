@@ -57,6 +57,7 @@ function Enemy(scene, cfg) {
   const edgeAtEnemy = innerEdge * (dist / (dist - 2));
   let visible = false;
   let alive = true;
+  let disposed = false;
 
   function update(dt) {
     if (!alive) return;
@@ -70,12 +71,28 @@ function Enemy(scene, cfg) {
     if (!visible && side * (x - edgeAtEnemy) < 0) visible = true;
   }
 
+  function disposeObject(obj) {
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) {
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(m => m.dispose());
+    }
+  }
+
   function kill() { alive = false; scene.remove(group); }
-  function dispose() { scene.remove(group); scene.remove(wall); }
+  function dispose() {
+    if (disposed) return;
+    disposed = true;
+    scene.remove(group);
+    scene.remove(wall);
+    group.traverse(disposeObject);
+    disposeObject(wall);
+  }
 
   return {
     update, kill, dispose,
     hitboxes,
+    updateMatrixWorld: () => group.updateMatrixWorld(true),
     get visible() { return visible; },
     get alive() { return alive; },
   };

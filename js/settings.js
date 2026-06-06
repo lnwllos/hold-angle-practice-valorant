@@ -69,7 +69,7 @@ function Settings(onChange) {
       [[VALO.DISTANCE.near, 'Near (8m)'], [VALO.DISTANCE.medium, 'Medium (18m)'], [VALO.DISTANCE.far, 'Far (35m)']],
       s.distance, v => s.distance = parseFloat(v)));
     row('Peek mode', select([['fixed', 'Fixed width'], ['random', 'Random (wider = rarer)']],
-      s.peekMode, v => { s.peekMode = v; }));
+      s.peekMode, v => { s.peekMode = v; build(); }));
     row('Peek width / max (m)', range(VALO.PEEK.min, VALO.PEEK.max, 0.1,
       s.peekMode === 'fixed' ? s.peekWidth : s.peekMaxWidth, v => v.toFixed(1) + 'm',
       v => { if (s.peekMode === 'fixed') s.peekWidth = v; else s.peekMaxWidth = v; }));

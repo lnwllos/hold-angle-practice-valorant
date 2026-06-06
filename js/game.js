@@ -41,18 +41,44 @@
   function setupPointerLock() {
     const b = document.getElementById('blocker');
     const panel = document.getElementById('settings');
-    b.addEventListener('click', () => document.body.requestPointerLock());
+    const hint = b.querySelector('p');
+    const lockTarget = three.renderer.domElement;
+
+    function showPointerLockFallback() {
+      b.style.display = 'flex';
+      panel.classList.add('open');
+      if (hint) hint.textContent = 'Pointer lock is blocked in this preview. Open index.html or start.bat in your browser to play.';
+    }
+
+    b.addEventListener('click', () => {
+      if (hint) hint.textContent = 'Click to play · ESC for settings';
+      try {
+        const pending = lockTarget.requestPointerLock();
+        if (pending && typeof pending.catch === 'function') pending.catch(showPointerLockFallback);
+      } catch (e) {
+        showPointerLockFallback();
+      }
+    });
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement != null;
       b.style.display = locked ? 'none' : 'flex';
       panel.classList.toggle('open', !locked);
+    });
+    document.addEventListener('pointerlockerror', showPointerLockFallback);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.pointerLockElement == null) {
+        panel.classList.toggle('open');
+      }
     });
   }
 
   function onSettingsChange(action) {
     settings.refreshCm();
     if (hud) hud.drawCrosshair(settings.crosshair());
-    if (action === 'reset-stats') Object.assign(stats, makeStats());
+    if (action === 'reset-stats') {
+      Object.assign(stats, makeStats());
+      sessionStart = performance.now();
+    }
     // distance/peek/side changes take effect on the next spawn.
   }
 

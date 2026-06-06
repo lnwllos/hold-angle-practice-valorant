@@ -52,6 +52,8 @@ function Weapon(deps) {
     }
     burstIndex += 1;
 
+    if (!en.visible) return;
+    if (en.updateMatrixWorld) en.updateMatrixWorld();
     ray.setFromCamera(center, deps.camera);
     const hits = ray.intersectObjects(en.hitboxes, false);
     if (hits.length === 0) return;
