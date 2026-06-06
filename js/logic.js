@@ -63,6 +63,18 @@ function shouldFlashRound(chance, hasAgent, rng) {
   return !!hasAgent && rng() < chance;
 }
 
+// --- Flash: blind factor and duration ---
+// angleDeg is the angle between the player's view direction and the direction to the flash
+// at detonation. Looking at it (<= fullDeg) -> full blind; turned away (>= zeroDeg) -> none.
+function blindFactor(angleDeg, fullDeg, zeroDeg) {
+  if (angleDeg <= fullDeg) return 1;
+  if (angleDeg >= zeroDeg) return 0;
+  return (zeroDeg - angleDeg) / (zeroDeg - fullDeg);
+}
+function blindDuration(maxBlind, factor) {
+  return maxBlind * factor;
+}
+
 // --- Shot timing feedback ---
 // This is position-based, not reaction-ms based:
 // - hidden/not yet visible: early
@@ -121,7 +133,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
-    sampleSpawnDelay, pickFlashAgent, shouldFlashRound,
+    sampleSpawnDelay, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
     classifyShotTimingByPeek, classifyShotTimingByLateral,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,

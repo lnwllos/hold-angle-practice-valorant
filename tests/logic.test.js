@@ -176,3 +176,18 @@ test('shouldFlashRound needs an agent and rng below chance', () => {
   assert.strictEqual(L.shouldFlashRound(0.3, true, () => 0.5), false);
   assert.strictEqual(L.shouldFlashRound(1.0, false, () => 0), false);
 });
+
+// --- flash: blind ---
+test('blindFactor is full at/under fullDeg, zero at/over zeroDeg, linear between', () => {
+  assert.strictEqual(L.blindFactor(0, 35, 100), 1);
+  assert.strictEqual(L.blindFactor(35, 35, 100), 1);
+  assert.strictEqual(L.blindFactor(100, 35, 100), 0);
+  assert.strictEqual(L.blindFactor(120, 35, 100), 0);
+  assert.ok(Math.abs(L.blindFactor(67.5, 35, 100) - 0.5) < 1e-9); // midpoint
+});
+
+test('blindDuration scales max blind by factor', () => {
+  assert.strictEqual(L.blindDuration(2.0, 1), 2.0);
+  assert.strictEqual(L.blindDuration(2.0, 0), 0);
+  assert.ok(Math.abs(L.blindDuration(1.75, 0.5) - 0.875) < 1e-9);
+});
