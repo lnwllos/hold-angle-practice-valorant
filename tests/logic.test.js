@@ -157,3 +157,22 @@ test('stats: empty stats report zeros, not NaN', () => {
   assert.strictEqual(L.statHeadshotPct(s), 0);
   assert.strictEqual(L.statAvgReaction(s), 0);
 });
+
+// --- flash: selection / round decision ---
+test('pickFlashAgent returns null when none enabled', () => {
+  assert.strictEqual(L.pickFlashAgent([], () => 0), null);
+  assert.strictEqual(L.pickFlashAgent(undefined, () => 0), null);
+});
+
+test('pickFlashAgent picks by rng index', () => {
+  const ks = ['breach', 'phoenix', 'yoru'];
+  assert.strictEqual(L.pickFlashAgent(ks, () => 0), 'breach');
+  assert.strictEqual(L.pickFlashAgent(ks, () => 0.5), 'phoenix');
+  assert.strictEqual(L.pickFlashAgent(ks, () => 0.999), 'yoru');
+});
+
+test('shouldFlashRound needs an agent and rng below chance', () => {
+  assert.strictEqual(L.shouldFlashRound(0.3, true, () => 0.2), true);
+  assert.strictEqual(L.shouldFlashRound(0.3, true, () => 0.5), false);
+  assert.strictEqual(L.shouldFlashRound(1.0, false, () => 0), false);
+});

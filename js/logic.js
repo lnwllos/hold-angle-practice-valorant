@@ -51,6 +51,18 @@ function sampleSpawnDelay(mode, fixedDelay, minDelay, maxDelay, rng) {
   return lo + (hi - lo) * rng();
 }
 
+// --- Flash: agent selection and round decision ---
+// enabledKeys: array of 'breach'|'phoenix'|'yoru' currently enabled. rng() -> [0,1).
+function pickFlashAgent(enabledKeys, rng) {
+  if (!enabledKeys || enabledKeys.length === 0) return null;
+  const i = Math.min(enabledKeys.length - 1, Math.floor(rng() * enabledKeys.length));
+  return enabledKeys[i];
+}
+// A spawn becomes a flash round when at least one agent is enabled and the roll is under chance.
+function shouldFlashRound(chance, hasAgent, rng) {
+  return !!hasAgent && rng() < chance;
+}
+
 // --- Shot timing feedback ---
 // This is position-based, not reaction-ms based:
 // - hidden/not yet visible: early
@@ -109,7 +121,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
-    sampleSpawnDelay, classifyShotTimingByPeek, classifyShotTimingByLateral,
+    sampleSpawnDelay, pickFlashAgent, shouldFlashRound,
+    classifyShotTimingByPeek, classifyShotTimingByLateral,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
   };
