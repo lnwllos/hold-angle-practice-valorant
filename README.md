@@ -28,6 +28,7 @@ almost-early/almost-late when a headshot lands on the leading/trailing half of t
 - **Spawn delay mode**: fixed respawn delay (default 0.5s) or random delay with min/max.
 - **Respawn at full peek**: starts the normal fixed/random respawn delay when the current bot
   reaches its configured peek width.
+- **Reset stats**: button at the top of Settings.
 - **Sensitivity**: Valorant sens value + mouse DPI (shows approximate cm/360) + a fine-tune
   multiplier to match your feel. *(Browsers report mouse movement in pixels, not raw DPI
   counts, so cm/360 is approximate — use the fine-tune slider.)*

@@ -69,6 +69,14 @@ function Settings(onChange) {
 
   function build() {
     body.innerHTML = '';
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const resetTop = document.createElement('button');
+    resetTop.textContent = 'Reset stats';
+    resetTop.addEventListener('click', () => onChange && onChange('reset-stats'));
+    actions.appendChild(resetTop);
+    body.appendChild(actions);
+
     row('Distance (player ↔ enemy)', select(
       [[VALO.DISTANCE.near, 'Near (8m)'], [VALO.DISTANCE.medium, 'Medium (18m)'], [VALO.DISTANCE.far, 'Far (35m)']],
       s.distance, v => s.distance = parseFloat(v)));
@@ -110,9 +118,6 @@ function Settings(onChange) {
     row('Crosshair thickness', range(1, 6, 1, s.chThickness, v => String(v), v => s.chThickness = v));
     row('Crosshair dot', checkbox(s.chDot, v => s.chDot = v));
 
-    const reset = document.createElement('button'); reset.textContent = 'Reset stats';
-    reset.addEventListener('click', () => onChange && onChange('reset-stats'));
-    body.appendChild(reset);
   }
 
   function refreshCm() {
