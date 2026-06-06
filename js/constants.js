@@ -2,7 +2,7 @@
 // Works as a browser global (classic script) and as a Node module (tests).
 
 const VALO = {
-  RUN_SPEED: 6.75,        // m/s — Valorant base running speed (enemy peek/swing speed)
+  RUN_SPEED: 5.4,         // m/s — Vandal/rifle run speed (enemy peek/swing speed)
   FIRE_RATE: 9.75,        // rounds/sec — Vandal
   FOV_H: 103,             // degrees — Valorant horizontal FOV (locked)
   YAW_CONST: 0.07,        // degrees of view rotation per mouse count per 1.0 sensitivity

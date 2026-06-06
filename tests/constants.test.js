@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const { VALO, hfovToVfov } = require('../js/constants.js');
 
 test('VALO holds Valorant reference values', () => {
-  assert.strictEqual(VALO.RUN_SPEED, 6.75);
+  assert.strictEqual(VALO.RUN_SPEED, 5.4);
   assert.strictEqual(VALO.FIRE_RATE, 9.75);
   assert.strictEqual(VALO.FOV_H, 103);
   assert.strictEqual(VALO.YAW_CONST, 0.07);

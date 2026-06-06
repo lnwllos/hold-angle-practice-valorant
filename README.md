@@ -16,7 +16,7 @@ perfect if the shot lands near the head center. Headshots outside the center zon
 almost-early/almost-late based on the leading/trailing half of the head.
 
 ## What it models from Valorant
-- Enemy peek/swing speed **6.75 m/s** (run speed).
+- Enemy peek/swing speed **5.4 m/s** (Vandal/rifle run speed).
 - **Vandal**: head **160** → one-shot headshot at any range (no falloff) · body **40** (4 shots
   to kill) · legs **33**. Enemy has **150 EHP** (100 HP + 50 armor).
 - Fire rate **9.75 rounds/sec** · horizontal **FOV 103°**.
