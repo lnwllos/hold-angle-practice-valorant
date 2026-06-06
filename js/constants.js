@@ -14,6 +14,18 @@ const VALO = {
   SPAWN_DELAY: { min: 0.2, max: 1.5 }, // seconds, default random-delay range
   TRACER: { life: 1.0, distance: 80 }, // seconds visible, meters for misses
   AIM_FEEDBACK: { perfectHeadHalfWidth: 0.045 }, // meters around head center counted as perfect
+  // Flash abilities (current-patch approximations; tunable). windup = charge time before
+  // the pop; blind = max blind seconds when looking straight at it; color = orb/burst tint.
+  FLASH: {
+    breach:  { windup: 0.5, blind: 2.0,  color: 0xfff2b0 }, // Flashpoint — yellow-white
+    phoenix: { windup: 0.6, blind: 1.3,  color: 0xffb060 }, // Curveball  — orange (fire)
+    yoru:    { windup: 0.6, blind: 1.75, color: 0xbcd6ff }, // Blindside  — blue-white
+    travel: 0.35,         // s — orb flight from corner into view before windup (our animation)
+    enemyPeekDelay: 0.15, // s — after detonation before the enemy starts peeking
+    blindFullDeg: 35,     // angle(view, flash) <= this -> full blind
+    blindZeroDeg: 100,    // angle(view, flash) >= this -> no blind
+    rampUp: 0.05,         // s — white overlay rises to full this fast
+  },
 };
 
 // Convert horizontal FOV (degrees) to the vertical FOV (degrees) a THREE camera needs,

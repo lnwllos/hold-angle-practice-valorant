@@ -15,6 +15,21 @@ test('VALO holds Valorant reference values', () => {
   assert.deepStrictEqual(VALO.AIM_FEEDBACK, { perfectHeadHalfWidth: 0.045 });
 });
 
+test('VALO.FLASH holds per-agent windup/blind/color and tuning fields', () => {
+  const f = VALO.FLASH;
+  const keys = Object.keys(f).sort();
+  assert.deepStrictEqual(keys,
+    ['blindFullDeg', 'blindZeroDeg', 'breach', 'enemyPeekDelay', 'phoenix', 'rampUp', 'travel', 'yoru']);
+  for (const k of ['breach', 'phoenix', 'yoru']) {
+    assert.ok(typeof f[k].windup === 'number' && f[k].windup > 0, `${k}.windup`);
+    assert.ok(typeof f[k].blind === 'number' && f[k].blind > 0, `${k}.blind`);
+    assert.strictEqual(typeof f[k].color, 'number', `${k}.color`);
+  }
+  assert.strictEqual(f.breach.windup, 0.5);
+  assert.strictEqual(f.breach.blind, 2.0);
+  assert.ok(f.blindFullDeg < f.blindZeroDeg);
+});
+
 test('hfovToVfov converts 103 H-FOV at 16:9 to ~71 V-FOV', () => {
   const v = hfovToVfov(103, 16 / 9);
   assert.ok(Math.abs(v - 70.5) < 1.0, `expected ~70.5, got ${v}`);
