@@ -5,6 +5,47 @@ function Effects(scene, camera) {
   const killSound = SoundPool('se/kill-shot.wav', 4, 0.85);
   const tracers = [];
 
+  // Lazy WebAudio context for synthesized flash cues (no audio files needed).
+  let audioCtx = null;
+  function ctx() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { audioCtx = null; }
+    }
+    return audioCtx;
+  }
+  function playFlashWindup(durSec) {
+    const ac = ctx(); if (!ac) return;
+    const now = ac.currentTime;
+    const d = durSec || 0.5;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(900, now + d);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + d * 0.85);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + d);
+    osc.connect(gain).connect(ac.destination);
+    osc.start(now);
+    osc.stop(now + d + 0.05);
+  }
+  function playFlashPop() {
+    const ac = ctx(); if (!ac) return;
+    const now = ac.currentTime;
+    const len = Math.floor(ac.sampleRate * 0.25);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const gain = ac.createGain();
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+    src.connect(gain).connect(ac.destination);
+    src.start(now);
+  }
+
   function addTracer(ray, hitPoint) {
     const origin = new THREE.Vector3();
     camera.getWorldPosition(origin);
@@ -51,6 +92,8 @@ function Effects(scene, camera) {
     update,
     playShot: () => shotSound.play(),
     playKill: () => killSound.play(),
+    playFlashWindup,
+    playFlashPop,
   };
 }
 
