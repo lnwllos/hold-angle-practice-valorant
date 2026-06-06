@@ -13,6 +13,11 @@ function Settings(onChange) {
     respawnDelay: VALO.RESPAWN_DELAY, // seconds
     respawnDelayMin: VALO.SPAWN_DELAY.min,
     respawnDelayMax: VALO.SPAWN_DELAY.max,
+    flashBreach: false,
+    flashPhoenix: false,
+    flashYoru: false,
+    flashChance: 0.3,   // fraction of spawns that become flash rounds (needs an agent enabled)
+    flashSound: true,
     valSens: 0.4,
     dpi: 800,
     sensMultiplier: 1.0,
@@ -96,6 +101,13 @@ function Settings(onChange) {
       row('Random delay min', range(0, 3, 0.1, s.respawnDelayMin, v => v.toFixed(1) + 's', v => s.respawnDelayMin = v));
       row('Random delay max', range(0, 3, 0.1, s.respawnDelayMax, v => v.toFixed(1) + 's', v => s.respawnDelayMax = v));
     }
+
+    row('Flash: Breach (Flashpoint)', checkbox(s.flashBreach, v => s.flashBreach = v));
+    row('Flash: Phoenix (Curveball)', checkbox(s.flashPhoenix, v => s.flashPhoenix = v));
+    row('Flash: Yoru (Blindside)', checkbox(s.flashYoru, v => s.flashYoru = v));
+    row('Flash frequency', range(0, 1, 0.05, s.flashChance, v => Math.round(v * 100) + '%',
+      v => s.flashChance = v), 'Chance a spawn is a flash round (needs an agent enabled).');
+    row('Flash sound', checkbox(s.flashSound, v => s.flashSound = v));
 
     row('Valorant sensitivity', range(0.05, 2.0, 0.01, s.valSens, v => v.toFixed(2), v => s.valSens = v),
       'Uses Valorant yaw constant (sens × 0.07°/count).');
