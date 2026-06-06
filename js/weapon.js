@@ -2,7 +2,7 @@
 // Resolves damage by hit zone, applies it to the current enemy's EHP, applies recoil to
 // the player view. Reports events to callbacks so game.js can update stats/state.
 //
-// deps: { camera, player, effects, getEnemy, getSettings, getReactionMs, on }
+// deps: { camera, player, effects, getEnemy, getSettings, on }
 //   getEnemy()    -> current enemy object (from Enemy()) or null
 //   getSettings() -> { recoilOn, recoilIntensity }
 //   on            -> { shot(), hit(zone, isHead), kill() }
@@ -43,9 +43,11 @@ function Weapon(deps) {
   }
 
   function fireOne(en) {
-    const reactionMs = deps.getReactionMs ? deps.getReactionMs() : null;
-    const timing = classifyShotTiming(reactionMs, VALO.SHOT_TIMING.fastMs, VALO.SHOT_TIMING.slowMs);
-    deps.on.shot({ timing, reactionMs });
+    const timing = classifyShotTimingByPeek(
+      !!(en && en.alive && en.visible),
+      !!(en && en.alive && en.fullPeeked)
+    );
+    deps.on.shot({ timing });
 
     // recoil kick: first shot (index 0) has no offset; later shots climb/sway
     const s = deps.getSettings();

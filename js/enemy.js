@@ -56,6 +56,7 @@ function Enemy(scene, cfg) {
   // Visible once the enemy is inward (toward center) of that line.
   const edgeAtEnemy = innerEdge * (dist / (dist - 2));
   let visible = false;
+  let fullPeeked = false;
   let alive = true;
   let disposed = false;
 
@@ -64,8 +65,13 @@ function Enemy(scene, cfg) {
     const dir = Math.sign(targetX - x);
     if (dir !== 0) {
       x += dir * VALO.RUN_SPEED * dt;
-      if ((dir > 0 && x > targetX) || (dir < 0 && x < targetX)) x = targetX; // stop at target
+      if ((dir > 0 && x > targetX) || (dir < 0 && x < targetX)) {
+        x = targetX; // stop at target
+        fullPeeked = true;
+      }
       group.position.x = x;
+    } else {
+      fullPeeked = true;
     }
     // side=-1: visible when x > edgeAtEnemy; side=+1: when x < edgeAtEnemy
     if (!visible && side * (x - edgeAtEnemy) < 0) visible = true;
@@ -94,6 +100,7 @@ function Enemy(scene, cfg) {
     hitboxes,
     updateMatrixWorld: () => group.updateMatrixWorld(true),
     get visible() { return visible; },
+    get fullPeeked() { return fullPeeked; },
     get alive() { return alive; },
   };
 }

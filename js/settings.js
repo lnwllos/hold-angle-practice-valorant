@@ -9,6 +9,7 @@ function Settings(onChange) {
     peekMaxWidth: VALO.PEEK.max,      // meters (random mode upper bound)
     side: 'random',                   // 'left' | 'right' | 'random'
     spawnDelayMode: 'fixed',          // 'fixed' | 'random'
+    respawnOnFullPeek: false,
     respawnDelay: VALO.RESPAWN_DELAY, // seconds
     respawnDelayMin: VALO.SPAWN_DELAY.min,
     respawnDelayMax: VALO.SPAWN_DELAY.max,
@@ -80,6 +81,7 @@ function Settings(onChange) {
       s.side, v => s.side = v));
     row('Spawn delay mode', select([['fixed', 'Fixed delay'], ['random', 'Random delay']],
       s.spawnDelayMode, v => { s.spawnDelayMode = v; build(); }));
+    row('Respawn at full peek', checkbox(s.respawnOnFullPeek, v => s.respawnOnFullPeek = v));
     if (s.spawnDelayMode === 'fixed') {
       row('Respawn delay', range(0, 2, 0.1, s.respawnDelay, v => v.toFixed(1) + 's', v => s.respawnDelay = v));
     } else {

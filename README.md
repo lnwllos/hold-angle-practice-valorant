@@ -11,7 +11,8 @@ no build step.
 Click the screen to play (mouse is captured — pointer lock). Press **Esc** to open Settings or
 pause. Left-click to shoot (unlimited ammo, no reload).
 Every shot plays a Vandal sound, draws a 1-second fading tracer, and gives timing feedback:
-too early, good timing, or too slow.
+too early before the bot is visible, good while it is swinging, or too slow after it reaches
+the configured peek width.
 
 ## What it models from Valorant
 - Enemy peek/swing speed **6.75 m/s** (run speed).
@@ -25,6 +26,8 @@ too early, good timing, or too slow.
 - **Peek mode**: Fixed width, or Random where **wider peeks are rarer**.
 - **Peek side**: Left / Right / Random.
 - **Spawn delay mode**: fixed respawn delay (default 0.5s) or random delay with min/max.
+- **Respawn at full peek**: immediately starts the next bot when the current bot reaches its
+  configured peek width.
 - **Sensitivity**: Valorant sens value + mouse DPI (shows approximate cm/360) + a fine-tune
   multiplier to match your feel. *(Browsers report mouse movement in pixels, not raw DPI
   counts, so cm/360 is approximate — use the fine-tune slider.)*

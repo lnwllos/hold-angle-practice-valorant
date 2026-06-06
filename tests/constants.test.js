@@ -11,7 +11,6 @@ test('VALO holds Valorant reference values', () => {
   assert.strictEqual(VALO.ENEMY.hp + VALO.ENEMY.armor, 150);
   assert.strictEqual(VALO.RESPAWN_DELAY, 0.5);
   assert.deepStrictEqual(VALO.SPAWN_DELAY, { min: 0.2, max: 1.5 });
-  assert.deepStrictEqual(VALO.SHOT_TIMING, { fastMs: 75, slowMs: 300 });
   assert.deepStrictEqual(VALO.TRACER, { life: 1.0, distance: 80 });
 });
 

@@ -22,7 +22,6 @@
       effects,
       getEnemy: () => enemy,
       getSettings: () => settings.weaponCfg(),
-      getReactionMs: () => visibleAt == null ? null : (performance.now() / 1000 - visibleAt) * 1000,
       on: {
         shot: info => {
           recordShot(stats);
@@ -127,9 +126,19 @@
       if (nowSec >= respawnAt) spawnEnemy();
     }
     if (enemy && enemy.alive) {
+      const wasFullPeeked = enemy.fullPeeked;
       enemy.update(lastDt);
       if (visibleAt == null && enemy.visible) visibleAt = nowSec; // reaction clock starts
+      if (settings.get().respawnOnFullPeek && !wasFullPeeked && enemy.fullPeeked) {
+        hud.showShotFeedback('slow');
+        enemy.dispose();
+        enemy = null;
+        state = 'dead';
+        respawnAt = nowSec;
+        return true;
+      }
     }
+    return false;
   }
 
   // --- main loop ---
@@ -145,8 +154,8 @@
     lastDt = dt;
     const nowSec = performance.now() / 1000;
     player.update(dt);
-    updateState(nowSec);
-    weapon.update(dt, nowSec);
+    const autoRespawned = updateState(nowSec);
+    if (!autoRespawned) weapon.update(dt, nowSec);
     effects.update(dt);
     hud.update(stats, (performance.now() - sessionStart) / 1000);
   }

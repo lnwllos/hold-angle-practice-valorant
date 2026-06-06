@@ -52,9 +52,13 @@ function sampleSpawnDelay(mode, fixedDelay, minDelay, maxDelay, rng) {
 }
 
 // --- Shot timing feedback ---
-function classifyShotTiming(reactionMs, fastMs, slowMs) {
-  if (reactionMs == null || !Number.isFinite(reactionMs) || reactionMs < fastMs) return 'fast';
-  if (reactionMs > slowMs) return 'slow';
+// This is position-based, not reaction-ms based:
+// - hidden/not yet visible: early
+// - moving through the visible peek: good
+// - already stopped at full peek width: late
+function classifyShotTimingByPeek(isVisible, isFullyPeeked) {
+  if (!isVisible) return 'fast';
+  if (isFullyPeeked) return 'slow';
   return 'good';
 }
 
@@ -84,7 +88,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
-    sampleSpawnDelay, classifyShotTiming,
+    sampleSpawnDelay, classifyShotTimingByPeek,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
   };

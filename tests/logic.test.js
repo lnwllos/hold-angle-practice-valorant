@@ -86,14 +86,14 @@ test('sampleSpawnDelay samples random delay inside ordered range', () => {
 });
 
 // --- shot timing ---
-test('classifyShotTiming labels hidden/early shots as fast', () => {
-  assert.strictEqual(L.classifyShotTiming(null, 75, 300), 'fast');
-  assert.strictEqual(L.classifyShotTiming(50, 75, 300), 'fast');
+test('classifyShotTimingByPeek labels hidden shots as fast', () => {
+  assert.strictEqual(L.classifyShotTimingByPeek(false, false), 'fast');
+  assert.strictEqual(L.classifyShotTimingByPeek(false, true), 'fast');
 });
 
-test('classifyShotTiming labels ideal and slow shots', () => {
-  assert.strictEqual(L.classifyShotTiming(120, 75, 300), 'good');
-  assert.strictEqual(L.classifyShotTiming(350, 75, 300), 'slow');
+test('classifyShotTimingByPeek labels visible swing vs full peek', () => {
+  assert.strictEqual(L.classifyShotTimingByPeek(true, false), 'good');
+  assert.strictEqual(L.classifyShotTimingByPeek(true, true), 'slow');
 });
 
 // --- recoil ---
