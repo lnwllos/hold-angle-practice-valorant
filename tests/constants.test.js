@@ -10,6 +10,9 @@ test('VALO holds Valorant reference values', () => {
   assert.deepStrictEqual(VALO.VANDAL, { head: 160, body: 40, legs: 33 });
   assert.strictEqual(VALO.ENEMY.hp + VALO.ENEMY.armor, 150);
   assert.strictEqual(VALO.RESPAWN_DELAY, 0.5);
+  assert.deepStrictEqual(VALO.SPAWN_DELAY, { min: 0.2, max: 1.5 });
+  assert.deepStrictEqual(VALO.SHOT_TIMING, { fastMs: 75, slowMs: 300 });
+  assert.deepStrictEqual(VALO.TRACER, { life: 1.0, distance: 80 });
 });
 
 test('hfovToVfov converts 103 H-FOV at 16:9 to ~71 V-FOV', () => {

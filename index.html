@@ -24,6 +24,14 @@
     #stats { position: absolute; top: 14px; left: 16px; font-size: 13px; line-height: 1.5;
       text-shadow: 0 1px 2px #000; }
     #stats b { color: #4ad6c8; }
+    #shot-feedback { position: absolute; left: 50%; top: calc(50% + 54px);
+      transform: translateX(-50%); min-width: 120px; text-align: center; font-size: 15px;
+      font-weight: 700; letter-spacing: 0.4px; color: #e8e8ec; opacity: 0;
+      text-shadow: 0 2px 4px #000; transition: opacity 140ms ease; }
+    #shot-feedback.show { opacity: 1; }
+    #shot-feedback.fast { color: #ffb24f; }
+    #shot-feedback.good { color: #4ad6c8; }
+    #shot-feedback.slow { color: #ff5a6b; }
 
     /* Settings panel */
     #settings { position: fixed; top: 0; right: 0; width: min(320px, 100vw); height: 100%;
@@ -47,6 +55,7 @@
 
   <div id="hud">
     <canvas id="crosshair" width="60" height="60"></canvas>
+    <div id="shot-feedback"></div>
     <div id="stats"></div>
   </div>
 
@@ -64,6 +73,7 @@
   <script src="js/logic.js"></script>
   <script src="js/scene.js"></script>
   <script src="js/player.js"></script>
+  <script src="js/effects.js"></script>
   <script src="js/enemy.js"></script>
   <script src="js/weapon.js"></script>
   <script src="js/hud.js"></script>

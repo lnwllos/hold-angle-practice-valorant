@@ -11,6 +11,9 @@ const VALO = {
   DISTANCE: { near: 8, medium: 18, far: 35 },  // meters, player <-> enemy
   PEEK: { min: 0.3, max: 2.5 },                // meters past the wall edge (shoulder..wide)
   RESPAWN_DELAY: 0.5,     // seconds after a kill before the next enemy
+  SPAWN_DELAY: { min: 0.2, max: 1.5 }, // seconds, default random-delay range
+  SHOT_TIMING: { fastMs: 75, slowMs: 300 }, // before/after this ideal window is early/slow
+  TRACER: { life: 1.0, distance: 80 }, // seconds visible, meters for misses
 };
 
 // Convert horizontal FOV (degrees) to the vertical FOV (degrees) a THREE camera needs,

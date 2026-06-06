@@ -1,7 +1,7 @@
 // Composition root: creates every module, runs the render loop, and owns the game state
 // machine (spawn -> peek -> hold -> dead -> respawn) plus reaction-time tracking.
 (function () {
-  let three, player, weapon, hud, settings;
+  let three, player, weapon, hud, settings, effects;
   let lastT = 0, lastDt = 0, sessionStart = 0;
   const stats = makeStats();
 
@@ -15,19 +15,26 @@
     settings = Settings(onSettingsChange);
     three = Scene3D(document.getElementById('app'));
     player = Player(three.camera, () => settings.sens());
+    effects = Effects(three.scene, three.camera);
     weapon = Weapon({
       camera: three.camera,
       player,
+      effects,
       getEnemy: () => enemy,
       getSettings: () => settings.weaponCfg(),
+      getReactionMs: () => visibleAt == null ? null : (performance.now() / 1000 - visibleAt) * 1000,
       on: {
-        shot: () => recordShot(stats),
+        shot: info => {
+          recordShot(stats);
+          hud.showShotFeedback(info.timing);
+        },
         hit: (zone, isHead) => recordHit(stats, isHead),
         kill: () => {
           const reaction = visibleAt != null ? (performance.now() / 1000 - visibleAt) * 1000 : 0;
           recordKill(stats, reaction);
+          effects.playKill();
           state = 'dead';
-          respawnAt = performance.now() / 1000 + settings.get().respawnDelay;
+          respawnAt = performance.now() / 1000 + resolveRespawnDelay();
         },
       },
     });
@@ -94,6 +101,16 @@
     if (cfg.peekMode === 'fixed') return cfg.peekWidth;
     return samplePeekWidth(VALO.PEEK.min, cfg.peekMaxWidth, Math.random);
   }
+  function resolveRespawnDelay() {
+    const cfg = settings.get();
+    return sampleSpawnDelay(
+      cfg.spawnDelayMode,
+      cfg.respawnDelay,
+      cfg.respawnDelayMin,
+      cfg.respawnDelayMax,
+      Math.random
+    );
+  }
   function spawnEnemy() {
     if (enemy) enemy.dispose();
     enemy = Enemy(three.scene, {
@@ -130,6 +147,7 @@
     player.update(dt);
     updateState(nowSec);
     weapon.update(dt, nowSec);
+    effects.update(dt);
     hud.update(stats, (performance.now() - sessionStart) / 1000);
   }
 

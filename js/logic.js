@@ -43,6 +43,21 @@ function canFire(lastShotTime, now, interval) {
   return now - lastShotTime >= interval;
 }
 
+// --- Spawn delay ---
+function sampleSpawnDelay(mode, fixedDelay, minDelay, maxDelay, rng) {
+  if (mode !== 'random') return fixedDelay;
+  const lo = Math.min(minDelay, maxDelay);
+  const hi = Math.max(minDelay, maxDelay);
+  return lo + (hi - lo) * rng();
+}
+
+// --- Shot timing feedback ---
+function classifyShotTiming(reactionMs, fastMs, slowMs) {
+  if (reactionMs == null || !Number.isFinite(reactionMs) || reactionMs < fastMs) return 'fast';
+  if (reactionMs > slowMs) return 'slow';
+  return 'good';
+}
+
 // --- Recoil (approximate Vandal pattern) ---
 // shotIndex is the 0-based index within a continuous burst. First shot is dead accurate.
 // Vertical climbs quickly over the first ~5 shots then slows; horizontal sway starts after.
@@ -69,6 +84,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
+    sampleSpawnDelay, classifyShotTiming,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
   };

@@ -2,7 +2,7 @@
 // Resolves damage by hit zone, applies it to the current enemy's EHP, applies recoil to
 // the player view. Reports events to callbacks so game.js can update stats/state.
 //
-// deps: { camera, player, getEnemy, getSettings, on }
+// deps: { camera, player, effects, getEnemy, getSettings, getReactionMs, on }
 //   getEnemy()    -> current enemy object (from Enemy()) or null
 //   getSettings() -> { recoilOn, recoilIntensity }
 //   on            -> { shot(), hit(zone, isHead), kill() }
@@ -36,14 +36,17 @@ function Weapon(deps) {
 
   function update(dt, nowSec) {
     const en = syncEnemy();
-    if (!firing || !en || !en.alive) return;
+    if (!firing) return;
     if (!canFire(lastShot, nowSec, interval)) return;
     lastShot = nowSec;
     fireOne(en);
   }
 
   function fireOne(en) {
-    deps.on.shot();
+    const reactionMs = deps.getReactionMs ? deps.getReactionMs() : null;
+    const timing = classifyShotTiming(reactionMs, VALO.SHOT_TIMING.fastMs, VALO.SHOT_TIMING.slowMs);
+    deps.on.shot({ timing, reactionMs });
+
     // recoil kick: first shot (index 0) has no offset; later shots climb/sway
     const s = deps.getSettings();
     if (s.recoilOn) {
@@ -52,10 +55,14 @@ function Weapon(deps) {
     }
     burstIndex += 1;
 
-    if (!en.visible) return;
-    if (en.updateMatrixWorld) en.updateMatrixWorld();
     ray.setFromCamera(center, deps.camera);
+    if (!en || !en.alive || !en.visible) {
+      if (deps.effects) { deps.effects.playShot(); deps.effects.addTracer(ray.ray, null); }
+      return;
+    }
+    if (en.updateMatrixWorld) en.updateMatrixWorld();
     const hits = ray.intersectObjects(en.hitboxes, false);
+    if (deps.effects) { deps.effects.playShot(); deps.effects.addTracer(ray.ray, hits[0] && hits[0].point); }
     if (hits.length === 0) return;
     const zone = hits[0].object.userData.zone;
     const isHead = zone === 'head';

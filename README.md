@@ -10,6 +10,8 @@ no build step.
 
 Click the screen to play (mouse is captured — pointer lock). Press **Esc** to open Settings or
 pause. Left-click to shoot (unlimited ammo, no reload).
+Every shot plays a Vandal sound, draws a 1-second fading tracer, and gives timing feedback:
+too early, good timing, or too slow.
 
 ## What it models from Valorant
 - Enemy peek/swing speed **6.75 m/s** (run speed).
@@ -22,7 +24,7 @@ pause. Left-click to shoot (unlimited ammo, no reload).
 - **Distance** player ↔ enemy: Near 8m / Medium 18m / Far 35m.
 - **Peek mode**: Fixed width, or Random where **wider peeks are rarer**.
 - **Peek side**: Left / Right / Random.
-- **Respawn delay** (default 0.5s).
+- **Spawn delay mode**: fixed respawn delay (default 0.5s) or random delay with min/max.
 - **Sensitivity**: Valorant sens value + mouse DPI (shows approximate cm/360) + a fine-tune
   multiplier to match your feel. *(Browsers report mouse movement in pixels, not raw DPI
   counts, so cm/360 is approximate — use the fine-tune slider.)*
@@ -48,6 +50,7 @@ js/constants.js   Valorant reference values + FOV helper   (tested)
 js/logic.js       pure game logic                          (tested)
 js/scene.js       renderer, FOV-103 camera, environment
 js/player.js      pointer lock + mouse look + sensitivity
+js/effects.js     shot/kill sound effects + fading bullet tracers
 js/enemy.js       peeking bot with head/body/legs hitboxes
 js/weapon.js      Vandal hitscan, damage, fire-rate, recoil
 js/hud.js         crosshair + stats overlay

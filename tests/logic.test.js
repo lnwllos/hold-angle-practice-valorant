@@ -74,6 +74,28 @@ test('canFire only after the interval elapsed', () => {
   assert.strictEqual(L.canFire(1.0, 1.0 + interval * 1.01, interval), true);
 });
 
+// --- spawn delay ---
+test('sampleSpawnDelay returns fixed delay when mode is fixed', () => {
+  assert.strictEqual(L.sampleSpawnDelay('fixed', 0.5, 0.2, 1.5, () => 1), 0.5);
+});
+
+test('sampleSpawnDelay samples random delay inside ordered range', () => {
+  assert.ok(Math.abs(L.sampleSpawnDelay('random', 0.5, 0.2, 1.5, () => 0) - 0.2) < 1e-9);
+  assert.ok(Math.abs(L.sampleSpawnDelay('random', 0.5, 0.2, 1.5, () => 1) - 1.5) < 1e-9);
+  assert.ok(Math.abs(L.sampleSpawnDelay('random', 0.5, 1.5, 0.2, () => 0.5) - 0.85) < 1e-9);
+});
+
+// --- shot timing ---
+test('classifyShotTiming labels hidden/early shots as fast', () => {
+  assert.strictEqual(L.classifyShotTiming(null, 75, 300), 'fast');
+  assert.strictEqual(L.classifyShotTiming(50, 75, 300), 'fast');
+});
+
+test('classifyShotTiming labels ideal and slow shots', () => {
+  assert.strictEqual(L.classifyShotTiming(120, 75, 300), 'good');
+  assert.strictEqual(L.classifyShotTiming(350, 75, 300), 'slow');
+});
+
 // --- recoil ---
 test('recoilOffset: first shot has no offset', () => {
   assert.deepStrictEqual(L.recoilOffset(0, 1), { yaw: 0, pitch: 0 });

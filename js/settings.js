@@ -8,7 +8,10 @@ function Settings(onChange) {
     peekWidth: 1.2,                   // meters (fixed mode)
     peekMaxWidth: VALO.PEEK.max,      // meters (random mode upper bound)
     side: 'random',                   // 'left' | 'right' | 'random'
+    spawnDelayMode: 'fixed',          // 'fixed' | 'random'
     respawnDelay: VALO.RESPAWN_DELAY, // seconds
+    respawnDelayMin: VALO.SPAWN_DELAY.min,
+    respawnDelayMax: VALO.SPAWN_DELAY.max,
     valSens: 0.4,
     dpi: 800,
     sensMultiplier: 1.0,
@@ -75,7 +78,14 @@ function Settings(onChange) {
       v => { if (s.peekMode === 'fixed') s.peekWidth = v; else s.peekMaxWidth = v; }));
     row('Peek side', select([['left', 'Left'], ['right', 'Right'], ['random', 'Random']],
       s.side, v => s.side = v));
-    row('Respawn delay', range(0, 2, 0.1, s.respawnDelay, v => v.toFixed(1) + 's', v => s.respawnDelay = v));
+    row('Spawn delay mode', select([['fixed', 'Fixed delay'], ['random', 'Random delay']],
+      s.spawnDelayMode, v => { s.spawnDelayMode = v; build(); }));
+    if (s.spawnDelayMode === 'fixed') {
+      row('Respawn delay', range(0, 2, 0.1, s.respawnDelay, v => v.toFixed(1) + 's', v => s.respawnDelay = v));
+    } else {
+      row('Random delay min', range(0, 3, 0.1, s.respawnDelayMin, v => v.toFixed(1) + 's', v => s.respawnDelayMin = v));
+      row('Random delay max', range(0, 3, 0.1, s.respawnDelayMax, v => v.toFixed(1) + 's', v => s.respawnDelayMax = v));
+    }
 
     row('Valorant sensitivity', range(0.05, 2.0, 0.01, s.valSens, v => v.toFixed(2), v => s.valSens = v),
       'Uses Valorant yaw constant (sens × 0.07°/count).');

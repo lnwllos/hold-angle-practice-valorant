@@ -4,6 +4,9 @@ function Hud(crosshairCfg) {
   const cv = document.getElementById('crosshair');
   const ctx = cv.getContext('2d');
   const statsEl = document.getElementById('stats');
+  const feedbackEl = document.getElementById('shot-feedback');
+  const feedbackText = { fast: 'ยิงเร็วเกิน', good: 'จังหวะดี', slow: 'ยิงช้าเกิน' };
+  let feedbackUntil = 0;
 
   function drawCrosshair(cfg) {
     const c = cfg || crosshairCfg;
@@ -26,8 +29,19 @@ function Hud(crosshairCfg) {
       `Headshot: <b>${(statHeadshotPct(stats) * 100).toFixed(0)}%</b><br>` +
       `Avg reaction: <b>${statAvgReaction(stats).toFixed(0)} ms</b><br>` +
       `Time: <b>${sessionSec.toFixed(0)}s</b>`;
+    if (feedbackEl && performance.now() > feedbackUntil) {
+      feedbackEl.className = '';
+      feedbackEl.textContent = '';
+    }
+  }
+
+  function showShotFeedback(kind) {
+    if (!feedbackEl) return;
+    feedbackEl.textContent = feedbackText[kind] || kind;
+    feedbackEl.className = `show ${kind}`;
+    feedbackUntil = performance.now() + 700;
   }
 
   drawCrosshair(crosshairCfg);
-  return { update, drawCrosshair };
+  return { update, drawCrosshair, showShotFeedback };
 }
