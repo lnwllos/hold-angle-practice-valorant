@@ -13,6 +13,7 @@ const VALO = {
   RESPAWN_DELAY: 0.5,     // seconds after a kill before the next enemy
   SPAWN_DELAY: { min: 0.2, max: 1.5 }, // seconds, default random-delay range
   TRACER: { life: 1.0, distance: 80 }, // seconds visible, meters for misses
+  AIM_FEEDBACK: { perfectHeadHalfWidth: 0.045 }, // meters around head center counted as perfect
 };
 
 // Convert horizontal FOV (degrees) to the vertical FOV (degrees) a THREE camera needs,

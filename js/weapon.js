@@ -73,7 +73,8 @@ function Weapon(deps) {
       aimX,
       en.x,
       en.movementDir,
-      en.fullPeeked
+      en.fullPeeked,
+      VALO.AIM_FEEDBACK.perfectHeadHalfWidth
     );
     deps.on.shot({ timing });
 

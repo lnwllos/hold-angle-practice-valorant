@@ -12,6 +12,7 @@ test('VALO holds Valorant reference values', () => {
   assert.strictEqual(VALO.RESPAWN_DELAY, 0.5);
   assert.deepStrictEqual(VALO.SPAWN_DELAY, { min: 0.2, max: 1.5 });
   assert.deepStrictEqual(VALO.TRACER, { life: 1.0, distance: 80 });
+  assert.deepStrictEqual(VALO.AIM_FEEDBACK, { perfectHeadHalfWidth: 0.045 });
 });
 
 test('hfovToVfov converts 103 H-FOV at 16:9 to ~71 V-FOV', () => {

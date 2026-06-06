@@ -65,14 +65,16 @@ function classifyShotTimingByPeek(isVisible, isFullyPeeked) {
 // --- Lateral shot timing feedback ---
 // movementDir is the bot's screen/world X direction while peeking: +1 = right, -1 = left.
 // A miss ahead of that motion means the player fired too early; a miss behind it means late.
-// Head hits are graded as "almost" early/late by which half of the head was hit.
-function classifyShotTimingByLateral(isVisible, hitZone, aimX, botX, movementDir, isFullyPeeked) {
+// Center-head hits are perfect; other head hits are "almost" early/late by head side.
+function classifyShotTimingByLateral(isVisible, hitZone, aimX, botX, movementDir, isFullyPeeked, perfectHeadHalfWidth) {
   if (!isVisible) return 'fast';
   if (!Number.isFinite(aimX) || !Number.isFinite(botX) || !movementDir) {
     return classifyShotTimingByPeek(isVisible, isFullyPeeked);
   }
 
   const delta = aimX - botX;
+  const perfectWidth = Number.isFinite(perfectHeadHalfWidth) ? Math.max(0, perfectHeadHalfWidth) : 0;
+  if (hitZone === 'head' && Math.abs(delta) <= perfectWidth) return 'perfect';
   if (Math.abs(delta) < 1e-6) return isFullyPeeked ? 'slow' : 'good';
   const isAhead = Math.sign(delta) === Math.sign(movementDir);
 

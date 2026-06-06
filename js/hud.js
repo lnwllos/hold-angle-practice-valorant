@@ -8,6 +8,7 @@ function Hud(crosshairCfg) {
   const feedbackText = {
     fast: 'ยิงเร็วเกิน',
     nearFast: 'เกือบเร็ว',
+    perfect: 'ยิงเป๊ะ',
     good: 'จังหวะดี',
     nearSlow: 'เกือบช้า',
     slow: 'ยิงช้าเกิน',

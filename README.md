@@ -12,7 +12,8 @@ Click the screen to play (mouse is captured — pointer lock). Press **Esc** to 
 pause. Left-click to shoot (unlimited ammo, no reload).
 Every shot plays a Vandal sound, draws a 1-second fading tracer, and gives timing feedback:
 too early if the shot passes ahead of the bot, too slow if it passes behind the bot, and
-almost-early/almost-late when a headshot lands on the leading/trailing half of the head.
+perfect if the shot lands near the head center. Headshots outside the center zone show
+almost-early/almost-late based on the leading/trailing half of the head.
 
 ## What it models from Valorant
 - Enemy peek/swing speed **6.75 m/s** (run speed).

@@ -107,10 +107,16 @@ test('classifyShotTimingByLateral labels miss side for leftward peek', () => {
 });
 
 test('classifyShotTimingByLateral labels head halves as almost early/late', () => {
-  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 1.1, 1.0, 1, false), 'nearFast');
-  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 0.9, 1.0, 1, false), 'nearSlow');
-  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 0.9, 1.0, -1, false), 'nearFast');
-  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 1.1, 1.0, -1, false), 'nearSlow');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 1.1, 1.0, 1, false, 0.045), 'nearFast');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 0.9, 1.0, 1, false, 0.045), 'nearSlow');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 0.9, 1.0, -1, false, 0.045), 'nearFast');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 1.1, 1.0, -1, false, 0.045), 'nearSlow');
+});
+
+test('classifyShotTimingByLateral labels center head hits as perfect', () => {
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 1.04, 1.0, 1, false, 0.045), 'perfect');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 0.96, 1.0, -1, false, 0.045), 'perfect');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 1.05, 1.0, 1, false, 0.045), 'nearFast');
 });
 
 test('classifyShotTimingByLateral keeps non-head hits as good', () => {
