@@ -134,7 +134,7 @@
         enemy.dispose();
         enemy = null;
         state = 'dead';
-        respawnAt = nowSec;
+        respawnAt = nowSec + resolveRespawnDelay();
         return true;
       }
     }

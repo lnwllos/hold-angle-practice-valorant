@@ -26,8 +26,8 @@ almost-early/almost-late when a headshot lands on the leading/trailing half of t
 - **Peek mode**: Fixed width, or Random where **wider peeks are rarer**.
 - **Peek side**: Left / Right / Random.
 - **Spawn delay mode**: fixed respawn delay (default 0.5s) or random delay with min/max.
-- **Respawn at full peek**: immediately starts the next bot when the current bot reaches its
-  configured peek width.
+- **Respawn at full peek**: starts the normal fixed/random respawn delay when the current bot
+  reaches its configured peek width.
 - **Sensitivity**: Valorant sens value + mouse DPI (shows approximate cm/360) + a fine-tune
   multiplier to match your feel. *(Browsers report mouse movement in pixels, not raw DPI
   counts, so cm/360 is approximate — use the fine-tune slider.)*
