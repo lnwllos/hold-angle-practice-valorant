@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valorant Hold-Angle Trainer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #1b1b22;
+      font-family: "Segoe UI", system-ui, sans-serif; color: #e8e8ec; }
+    #app { position: fixed; inset: 0; }
+    canvas { display: block; }
+
+    /* Click-to-play blocker */
+    #blocker { position: fixed; inset: 0; display: flex; align-items: center;
+      justify-content: center; background: rgba(15,15,20,0.72); cursor: pointer; z-index: 30; }
+    #blocker .msg { text-align: center; }
+    #blocker h1 { font-size: 26px; margin-bottom: 10px; letter-spacing: 1px; }
+    #blocker p { opacity: 0.75; font-size: 14px; }
+
+    /* HUD */
+    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+    #crosshair { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); }
+    #stats { position: absolute; top: 14px; left: 16px; font-size: 13px; line-height: 1.5;
+      text-shadow: 0 1px 2px #000; }
+    #stats b { color: #4ad6c8; }
+
+    /* Settings panel */
+    #settings { position: fixed; top: 0; right: 0; width: 320px; height: 100%;
+      background: rgba(20,20,28,0.96); padding: 18px 18px 40px; overflow-y: auto; z-index: 20;
+      box-shadow: -4px 0 18px rgba(0,0,0,0.4); display: none; }
+    #settings.open { display: block; }
+    #settings h2 { font-size: 16px; margin-bottom: 12px; color: #4ad6c8; }
+    #settings .row { margin-bottom: 12px; }
+    #settings label { display: block; font-size: 12px; margin-bottom: 4px; opacity: 0.85; }
+    #settings input[type="range"] { width: 100%; }
+    #settings select, #settings input[type="number"] { width: 100%; padding: 5px 7px;
+      background: #2a2a36; color: #e8e8ec; border: 1px solid #3a3a48; border-radius: 4px; }
+    #settings .val { float: right; color: #4ad6c8; }
+    #settings .hint { font-size: 11px; opacity: 0.55; margin-top: 2px; }
+    #settings button { margin-top: 8px; padding: 7px 12px; background: #4ad6c8; color: #11151a;
+      border: none; border-radius: 5px; cursor: pointer; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="hud">
+    <canvas id="crosshair" width="60" height="60"></canvas>
+    <div id="stats"></div>
+  </div>
+
+  <div id="blocker"><div class="msg">
+    <h1>HOLD ANGLE TRAINER</h1>
+    <p>Click to play &nbsp;·&nbsp; ESC for settings</p>
+  </div></div>
+
+  <div id="settings"><h2>Settings</h2><div id="settings-body"></div></div>
+
+  <!-- Three.js (global THREE) -->
+  <script src="three.min.js"></script>
+  <!-- Game (order matters: pure logic first, then glue, then composition root) -->
+  <script src="js/constants.js"></script>
+  <script src="js/logic.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/weapon.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
