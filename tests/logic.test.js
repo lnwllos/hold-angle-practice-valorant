@@ -96,6 +96,28 @@ test('classifyShotTimingByPeek labels visible swing vs full peek', () => {
   assert.strictEqual(L.classifyShotTimingByPeek(true, true), 'slow');
 });
 
+test('classifyShotTimingByLateral labels miss side for rightward peek', () => {
+  assert.strictEqual(L.classifyShotTimingByLateral(true, null, 1.5, 1.0, 1, false), 'fast');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, null, 0.5, 1.0, 1, false), 'slow');
+});
+
+test('classifyShotTimingByLateral labels miss side for leftward peek', () => {
+  assert.strictEqual(L.classifyShotTimingByLateral(true, null, 0.5, 1.0, -1, false), 'fast');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, null, 1.5, 1.0, -1, false), 'slow');
+});
+
+test('classifyShotTimingByLateral labels head halves as almost early/late', () => {
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 1.1, 1.0, 1, false), 'nearFast');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 0.9, 1.0, 1, false), 'nearSlow');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 0.9, 1.0, -1, false), 'nearFast');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'head', 1.1, 1.0, -1, false), 'nearSlow');
+});
+
+test('classifyShotTimingByLateral keeps non-head hits as good', () => {
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'body', 1.5, 1.0, 1, false), 'good');
+  assert.strictEqual(L.classifyShotTimingByLateral(true, 'legs', 0.5, 1.0, 1, false), 'good');
+});
+
 // --- recoil ---
 test('recoilOffset: first shot has no offset', () => {
   assert.deepStrictEqual(L.recoilOffset(0, 1), { yaw: 0, pitch: 0 });

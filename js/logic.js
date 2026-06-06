@@ -62,6 +62,25 @@ function classifyShotTimingByPeek(isVisible, isFullyPeeked) {
   return 'good';
 }
 
+// --- Lateral shot timing feedback ---
+// movementDir is the bot's screen/world X direction while peeking: +1 = right, -1 = left.
+// A miss ahead of that motion means the player fired too early; a miss behind it means late.
+// Head hits are graded as "almost" early/late by which half of the head was hit.
+function classifyShotTimingByLateral(isVisible, hitZone, aimX, botX, movementDir, isFullyPeeked) {
+  if (!isVisible) return 'fast';
+  if (!Number.isFinite(aimX) || !Number.isFinite(botX) || !movementDir) {
+    return classifyShotTimingByPeek(isVisible, isFullyPeeked);
+  }
+
+  const delta = aimX - botX;
+  if (Math.abs(delta) < 1e-6) return isFullyPeeked ? 'slow' : 'good';
+  const isAhead = Math.sign(delta) === Math.sign(movementDir);
+
+  if (hitZone === 'head') return isAhead ? 'nearFast' : 'nearSlow';
+  if (hitZone) return 'good';
+  return isAhead ? 'fast' : 'slow';
+}
+
 // --- Recoil (approximate Vandal pattern) ---
 // shotIndex is the 0-based index within a continuous burst. First shot is dead accurate.
 // Vertical climbs quickly over the first ~5 shots then slows; horizontal sway starts after.
@@ -88,7 +107,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
-    sampleSpawnDelay, classifyShotTimingByPeek,
+    sampleSpawnDelay, classifyShotTimingByPeek, classifyShotTimingByLateral,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
   };

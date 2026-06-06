@@ -47,6 +47,7 @@ function Enemy(scene, cfg) {
   // Lateral motion at the enemy's depth: hidden behind the wall (outer side), emerge inward.
   const hiddenX = innerEdge + side * 1.2;            // behind the wall (occluded)
   const targetX = innerEdge - side * cfg.peekWidth;  // emerged inward past the corner
+  const movementDir = Math.sign(targetX - hiddenX);
   let x = hiddenX;
   group.position.set(x, 0, z);
 
@@ -102,5 +103,8 @@ function Enemy(scene, cfg) {
     get visible() { return visible; },
     get fullPeeked() { return fullPeeked; },
     get alive() { return alive; },
+    get x() { return x; },
+    get z() { return z; },
+    get movementDir() { return movementDir; },
   };
 }

@@ -5,7 +5,13 @@ function Hud(crosshairCfg) {
   const ctx = cv.getContext('2d');
   const statsEl = document.getElementById('stats');
   const feedbackEl = document.getElementById('shot-feedback');
-  const feedbackText = { fast: 'ยิงเร็วเกิน', good: 'จังหวะดี', slow: 'ยิงช้าเกิน' };
+  const feedbackText = {
+    fast: 'ยิงเร็วเกิน',
+    nearFast: 'เกือบเร็ว',
+    good: 'จังหวะดี',
+    nearSlow: 'เกือบช้า',
+    slow: 'ยิงช้าเกิน',
+  };
   let feedbackUntil = 0;
 
   function drawCrosshair(cfg) {

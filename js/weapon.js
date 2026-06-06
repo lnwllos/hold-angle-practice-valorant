@@ -43,12 +43,6 @@ function Weapon(deps) {
   }
 
   function fireOne(en) {
-    const timing = classifyShotTimingByPeek(
-      !!(en && en.alive && en.visible),
-      !!(en && en.alive && en.fullPeeked)
-    );
-    deps.on.shot({ timing });
-
     // recoil kick: first shot (index 0) has no offset; later shots climb/sway
     const s = deps.getSettings();
     if (s.recoilOn) {
@@ -58,12 +52,31 @@ function Weapon(deps) {
     burstIndex += 1;
 
     ray.setFromCamera(center, deps.camera);
+    let hits = [];
+    let aimX = en ? rayXAtZ(ray.ray, en.z) : NaN;
+    let timing = 'fast';
+
     if (!en || !en.alive || !en.visible) {
+      timing = classifyShotTimingByLateral(false, null, aimX, en ? en.x : NaN, en ? en.movementDir : 0, false);
+      deps.on.shot({ timing });
       if (deps.effects) { deps.effects.playShot(); deps.effects.addTracer(ray.ray, null); }
       return;
     }
+
     if (en.updateMatrixWorld) en.updateMatrixWorld();
-    const hits = ray.intersectObjects(en.hitboxes, false);
+    hits = ray.intersectObjects(en.hitboxes, false);
+    const hit = hits[0];
+    if (hit) aimX = hit.point.x;
+    timing = classifyShotTimingByLateral(
+      true,
+      hit && hit.object.userData.zone,
+      aimX,
+      en.x,
+      en.movementDir,
+      en.fullPeeked
+    );
+    deps.on.shot({ timing });
+
     if (deps.effects) { deps.effects.playShot(); deps.effects.addTracer(ray.ray, hits[0] && hits[0].point); }
     if (hits.length === 0) return;
     const zone = hits[0].object.userData.zone;
@@ -71,6 +84,13 @@ function Weapon(deps) {
     deps.on.hit(zone, isHead);
     ehp = applyDamage(ehp, damageForZone(zone, VALO.VANDAL));
     if (ehp <= 0) { en.kill(); deps.on.kill(); }
+  }
+
+  function rayXAtZ(rayObj, z) {
+    if (!rayObj || Math.abs(rayObj.direction.z) < 1e-6) return NaN;
+    const t = (z - rayObj.origin.z) / rayObj.direction.z;
+    if (t <= 0) return NaN;
+    return rayObj.origin.x + rayObj.direction.x * t;
   }
 
   return { update };
