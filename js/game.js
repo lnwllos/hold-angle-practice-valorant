@@ -131,8 +131,9 @@
       if (visibleAt == null && enemy.visible) visibleAt = nowSec; // reaction clock starts
       if (settings.get().respawnOnFullPeek && !wasFullPeeked && enemy.fullPeeked) {
         hud.showShotFeedback('slow');
-        enemy.dispose();
-        enemy = null;
+        // Keep the cover wall during the respawn delay; dispose it only when the next
+        // enemy is created so the angle does not flicker open between spawns.
+        enemy.kill();
         state = 'dead';
         respawnAt = nowSec + resolveRespawnDelay();
         return true;
