@@ -29,18 +29,20 @@ function Scene3D(container) {
   dir.position.set(-8, 20, 6);
   scene.add(dir);
 
-  // Floor
+  // Range floor. It extends behind the player too, so turning away from the
+  // shooting lane does not reveal the edge of the world.
+  const rangeCenterZ = -40;
   const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(140, 240),
+    new THREE.PlaneGeometry(320, 360),
     new THREE.MeshStandardMaterial({ color: 0x3a3f48 })
   );
   floor.rotation.x = -Math.PI / 2;
-  floor.position.z = -70;
+  floor.position.z = rangeCenterZ;
   scene.add(floor);
 
   // Subtle grid for depth perception
-  const grid = new THREE.GridHelper(140, 70, 0x2a2e36, 0x2a2e36);
-  grid.position.set(0, 0.01, -70);
+  const grid = new THREE.GridHelper(320, 160, 0x2a2e36, 0x2a2e36);
+  grid.position.set(0, 0.01, rangeCenterZ);
   scene.add(grid);
 
   // Back wall behind the enemy (for depth/reference)
@@ -50,6 +52,14 @@ function Scene3D(container) {
   );
   back.position.set(0, 7, -120);
   scene.add(back);
+
+  // Rear wall behind the player, only seen when turning away from the angle.
+  const rear = new THREE.Mesh(
+    new THREE.BoxGeometry(320, 14, 1),
+    new THREE.MeshStandardMaterial({ color: 0x282d36 })
+  );
+  rear.position.set(0, 7, 125);
+  scene.add(rear);
 
   function resize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
