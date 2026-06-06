@@ -7,9 +7,16 @@
 
   // Enemy lifecycle
   let enemy = null;
-  let state = 'waiting';   // 'waiting' | 'active' | 'dead'
+  let state = 'waiting';   // 'waiting' | 'active' | 'flashing' | 'dead'
   let respawnAt = 0;       // wall-clock seconds when the next enemy spawns
   let visibleAt = null;    // wall-clock seconds the current enemy became visible (reaction clock)
+
+  // Flash-round lifecycle (a flash pops, then the held enemy peeks)
+  let flash = null;
+  let flashAgent = null;
+  let enemyPeekAt = 0;
+  let windupSoundPlayed = false;
+  let detonationHandled = false;
 
   function init() {
     settings = Settings(onSettingsChange);
@@ -128,22 +135,91 @@
       Math.random
     );
   }
-  function spawnEnemy() {
+  function spawnEnemy(opts) {
     if (enemy) enemy.dispose();
     enemy = Enemy(three.scene, {
       distance: settings.get().distance,
-      peekWidth: resolvePeekWidth(),
-      side: resolveSide(),
+      peekWidth: opts && opts.peekWidth != null ? opts.peekWidth : resolvePeekWidth(),
+      side: opts && opts.side != null ? opts.side : resolveSide(),
     });
     state = 'active';
     visibleAt = null;
   }
 
+  // Decide whether the next spawn is a plain enemy or a flash round.
+  function startRound() {
+    const cfg = settings.get();
+    const enabled = [];
+    if (cfg.flashBreach) enabled.push('breach');
+    if (cfg.flashPhoenix) enabled.push('phoenix');
+    if (cfg.flashYoru) enabled.push('yoru');
+    if (shouldFlashRound(cfg.flashChance, enabled.length > 0, Math.random)) {
+      startFlashRound(enabled);
+    } else {
+      spawnEnemy();
+    }
+  }
+
+  // Spawn the enemy hidden behind cover (so the angle/wall is held), then play a flash that
+  // pops in front of the corner. The enemy is held until shortly after detonation.
+  function startFlashRound(enabled) {
+    if (flash) { flash.dispose(); flash = null; } // defensive: never leak a previous flash
+    const key = pickFlashAgent(enabled, Math.random);
+    flashAgent = VALO.FLASH[key];
+    const side = resolveSide();
+    spawnEnemy({ side, peekWidth: resolvePeekWidth() }); // wall + bot, hidden; sets state 'active'
+    state = 'flashing';                                  // override: hold the bot until the pop
+    flash = Flash(three.scene, {
+      color: flashAgent.color,
+      windup: flashAgent.windup,
+      travel: VALO.FLASH.travel,
+      side,
+      distance: settings.get().distance,
+    });
+    windupSoundPlayed = false;
+    detonationHandled = false;
+  }
+
+  // At detonation, blind by how far the player's view is from the flash, then queue the peek.
+  function handleDetonation(nowSec) {
+    const camPos = new THREE.Vector3();
+    const fwd = new THREE.Vector3();
+    three.camera.getWorldPosition(camPos);
+    three.camera.getWorldDirection(fwd);
+    const toFlash = flash.position.clone().sub(camPos).normalize();
+    const cos = Math.max(-1, Math.min(1, fwd.dot(toFlash)));
+    const angleDeg = (Math.acos(cos) * 180) / Math.PI;
+    const factor = blindFactor(angleDeg, VALO.FLASH.blindFullDeg, VALO.FLASH.blindZeroDeg);
+    hud.triggerBlind(blindDuration(flashAgent.blind, factor), flashAgent.color);
+    if (settings.get().flashSound) effects.playFlashPop();
+    enemyPeekAt = nowSec + VALO.FLASH.enemyPeekDelay;
+  }
+
   function updateState(nowSec) {
     if (state === 'waiting' || state === 'dead') {
-      if (nowSec >= respawnAt) spawnEnemy();
+      if (nowSec >= respawnAt) startRound();
     }
-    if (enemy && enemy.alive) {
+
+    // Advance the flash visual whenever one exists. It outlives the 'flashing' phase by a
+    // short burst, so update/dispose it independently of `state` (otherwise the burst would
+    // freeze and leak once the enemy is released).
+    if (flash) {
+      flash.update(lastDt);
+      if (!windupSoundPlayed && flash.windingUp) {
+        windupSoundPlayed = true;
+        if (settings.get().flashSound) effects.playFlashWindup(flashAgent.windup);
+      }
+      if (!detonationHandled && flash.detonated) {
+        detonationHandled = true;
+        handleDetonation(nowSec);
+      }
+      if (state === 'flashing' && detonationHandled && nowSec >= enemyPeekAt) {
+        state = 'active'; // release the held enemy; it begins peeking next frame
+      }
+      if (flash.done) { flash.dispose(); flash = null; }
+    }
+
+    if (state === 'active' && enemy && enemy.alive) {
       const wasFullPeeked = enemy.fullPeeked;
       enemy.update(lastDt);
       if (visibleAt == null && enemy.visible) visibleAt = nowSec; // reaction clock starts
@@ -175,6 +251,7 @@
     const autoRespawned = updateState(nowSec);
     if (!autoRespawned) weapon.update(dt, nowSec);
     effects.update(dt);
+    hud.updateBlind(dt);
     hud.update(stats, (performance.now() - sessionStart) / 1000);
   }
 
