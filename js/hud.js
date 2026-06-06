@@ -5,6 +5,27 @@ function Hud(crosshairCfg) {
   const ctx = cv.getContext('2d');
   const statsEl = document.getElementById('stats');
   const feedbackStack = document.getElementById('shot-feedback-stack');
+  const overlay = document.getElementById('flash-overlay');
+  let blindElapsed = 0, blindDuration = 0, blindTint = '#ffffff';
+
+  function toCss(color) {
+    return typeof color === 'number'
+      ? '#' + color.toString(16).padStart(6, '0')
+      : (color || '#ffffff');
+  }
+  function triggerBlind(durationSec, tintColor) {
+    blindDuration = Math.max(0, durationSec || 0);
+    blindElapsed = 0;
+    blindTint = toCss(tintColor);
+  }
+  function updateBlind(dt) {
+    if (!overlay) return;
+    if (blindDuration <= 0) { overlay.style.opacity = '0'; return; }
+    blindElapsed += dt;
+    overlay.style.background = blindElapsed < blindDuration * 0.15 ? blindTint : '#ffffff';
+    overlay.style.opacity = String(flashOverlayOpacity(blindElapsed, blindDuration, VALO.FLASH.rampUp));
+    if (blindElapsed >= blindDuration) { blindDuration = 0; overlay.style.opacity = '0'; }
+  }
   const feedbackText = {
     fast: 'ยิงเร็วเกิน',
     nearFast: 'เกือบเร็ว',
@@ -48,5 +69,5 @@ function Hud(crosshairCfg) {
   }
 
   drawCrosshair(crosshairCfg);
-  return { update, drawCrosshair, showShotFeedback };
+  return { update, drawCrosshair, showShotFeedback, triggerBlind, updateBlind };
 }
