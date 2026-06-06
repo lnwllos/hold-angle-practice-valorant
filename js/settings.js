@@ -1,0 +1,121 @@
+// Owns all tunable settings, persists to localStorage, and builds the #settings-body panel.
+// Other modules read settings via getters; some changes call onChange to apply immediately.
+function Settings(onChange) {
+  const KEY = 'holdangle.settings.v1';
+  const defaults = {
+    distance: VALO.DISTANCE.medium,   // meters
+    peekMode: 'random',               // 'fixed' | 'random'
+    peekWidth: 1.2,                   // meters (fixed mode)
+    peekMaxWidth: VALO.PEEK.max,      // meters (random mode upper bound)
+    side: 'random',                   // 'left' | 'right' | 'random'
+    respawnDelay: VALO.RESPAWN_DELAY, // seconds
+    valSens: 0.4,
+    dpi: 800,
+    sensMultiplier: 1.0,
+    recoilOn: false,
+    recoilIntensity: 1.0,
+    chColor: '#33ff88',
+    chLength: 7,
+    chGap: 4,
+    chThickness: 2,
+    chDot: false,
+  };
+  let s = load();
+
+  function load() {
+    try { return Object.assign({}, defaults, JSON.parse(localStorage.getItem(KEY) || '{}')); }
+    catch (e) { return Object.assign({}, defaults); }
+  }
+  function save() { localStorage.setItem(KEY, JSON.stringify(s)); }
+
+  // --- panel construction ---
+  const body = document.getElementById('settings-body');
+
+  function row(label, control, hint) {
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.innerHTML = `<label>${label}</label>`;
+    div.appendChild(control);
+    if (hint) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = hint; div.appendChild(h); }
+    body.appendChild(div);
+    return div;
+  }
+  function select(options, value, fn) {
+    const el = document.createElement('select');
+    options.forEach(([v, t]) => {
+      const o = document.createElement('option'); o.value = v; o.textContent = t;
+      if (String(v) === String(value)) o.selected = true; el.appendChild(o);
+    });
+    el.addEventListener('change', () => { fn(el.value); save(); onChange && onChange(); });
+    return el;
+  }
+  function range(min, max, step, value, fmt, fn) {
+    const el = document.createElement('input');
+    el.type = 'range'; el.min = min; el.max = max; el.step = step; el.value = value;
+    const tag = document.createElement('span'); tag.className = 'val'; tag.textContent = fmt(value);
+    el.addEventListener('input', () => { const v = parseFloat(el.value); tag.textContent = fmt(v); fn(v); save(); onChange && onChange(); });
+    const wrap = document.createElement('div'); wrap.appendChild(tag); wrap.appendChild(el);
+    return wrap;
+  }
+  function checkbox(value, fn) {
+    const el = document.createElement('input'); el.type = 'checkbox'; el.checked = value;
+    el.addEventListener('change', () => { fn(el.checked); save(); onChange && onChange(); });
+    return el;
+  }
+
+  function build() {
+    body.innerHTML = '';
+    row('Distance (player ↔ enemy)', select(
+      [[VALO.DISTANCE.near, 'Near (8m)'], [VALO.DISTANCE.medium, 'Medium (18m)'], [VALO.DISTANCE.far, 'Far (35m)']],
+      s.distance, v => s.distance = parseFloat(v)));
+    row('Peek mode', select([['fixed', 'Fixed width'], ['random', 'Random (wider = rarer)']],
+      s.peekMode, v => { s.peekMode = v; }));
+    row('Peek width / max (m)', range(VALO.PEEK.min, VALO.PEEK.max, 0.1,
+      s.peekMode === 'fixed' ? s.peekWidth : s.peekMaxWidth, v => v.toFixed(1) + 'm',
+      v => { if (s.peekMode === 'fixed') s.peekWidth = v; else s.peekMaxWidth = v; }));
+    row('Peek side', select([['left', 'Left'], ['right', 'Right'], ['random', 'Random']],
+      s.side, v => s.side = v));
+    row('Respawn delay', range(0, 2, 0.1, s.respawnDelay, v => v.toFixed(1) + 's', v => s.respawnDelay = v));
+
+    row('Valorant sensitivity', range(0.05, 2.0, 0.01, s.valSens, v => v.toFixed(2), v => s.valSens = v),
+      'Uses Valorant yaw constant (sens × 0.07°/count).');
+    row('Mouse DPI', range(100, 3200, 100, s.dpi, v => String(v), v => s.dpi = v));
+    row('Sens fine-tune', range(0.5, 2.0, 0.05, s.sensMultiplier, v => '×' + v.toFixed(2), v => s.sensMultiplier = v),
+      'Approx cm/360 shown below; tune to match your feel.');
+    const cm = document.createElement('div'); cm.className = 'hint'; cm.id = 'cm360';
+    body.appendChild(cm); refreshCm();
+
+    row('Vandal recoil', checkbox(s.recoilOn, v => s.recoilOn = v));
+    row('Recoil intensity', range(0.2, 2.0, 0.1, s.recoilIntensity, v => '×' + v.toFixed(1), v => s.recoilIntensity = v));
+
+    row('Crosshair color', (() => {
+      const el = document.createElement('input'); el.type = 'color'; el.value = s.chColor;
+      el.addEventListener('input', () => { s.chColor = el.value; save(); onChange && onChange(); });
+      return el;
+    })());
+    row('Crosshair length', range(0, 20, 1, s.chLength, v => String(v), v => s.chLength = v));
+    row('Crosshair gap', range(0, 15, 1, s.chGap, v => String(v), v => s.chGap = v));
+    row('Crosshair thickness', range(1, 6, 1, s.chThickness, v => String(v), v => s.chThickness = v));
+    row('Crosshair dot', checkbox(s.chDot, v => s.chDot = v));
+
+    const reset = document.createElement('button'); reset.textContent = 'Reset stats';
+    reset.addEventListener('click', () => onChange && onChange('reset-stats'));
+    body.appendChild(reset);
+  }
+
+  function refreshCm() {
+    const el = document.getElementById('cm360');
+    if (el) el.textContent = '≈ ' + cm360(s.valSens, s.dpi, VALO.YAW_CONST).toFixed(1) + ' cm/360 (approx)';
+  }
+
+  build();
+
+  return {
+    get: () => s,
+    sens: () => ({ valSens: s.valSens, multiplier: s.sensMultiplier }),
+    crosshair: () => ({ color: s.chColor, length: s.chLength, gap: s.chGap, thickness: s.chThickness, dot: s.chDot }),
+    weaponCfg: () => ({ recoilOn: s.recoilOn, recoilIntensity: s.recoilIntensity }),
+    refreshCm,
+    rebuild: build,
+  };
+}

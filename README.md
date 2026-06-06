@@ -1,0 +1,56 @@
+# Valorant Hold-Angle Trainer
+
+A browser FPS for practicing **holding an angle**: stand still, pre-aim a corner, and react to
+an enemy swinging out from cover. Damage and physics are referenced to Valorant. No install,
+no build step.
+
+## How to run
+- **Double-click `index.html`** — works offline (Three.js is vendored locally), **or**
+- run **`start.bat`** to serve it at http://localhost:8000.
+
+Click the screen to play (mouse is captured — pointer lock). Press **Esc** to open Settings or
+pause. Left-click to shoot (unlimited ammo, no reload).
+
+## What it models from Valorant
+- Enemy peek/swing speed **6.75 m/s** (run speed).
+- **Vandal**: head **160** → one-shot headshot at any range (no falloff) · body **40** (4 shots
+  to kill) · legs **33**. Enemy has **150 EHP** (100 HP + 50 armor).
+- Fire rate **9.75 rounds/sec** · horizontal **FOV 103°**.
+- The enemy hides behind a corner and only becomes visible once it strafes past the edge.
+
+## Settings (Esc)
+- **Distance** player ↔ enemy: Near 8m / Medium 18m / Far 35m.
+- **Peek mode**: Fixed width, or Random where **wider peeks are rarer**.
+- **Peek side**: Left / Right / Random.
+- **Respawn delay** (default 0.5s).
+- **Sensitivity**: Valorant sens value + mouse DPI (shows approximate cm/360) + a fine-tune
+  multiplier to match your feel. *(Browsers report mouse movement in pixels, not raw DPI
+  counts, so cm/360 is approximate — use the fine-tune slider.)*
+- **Vandal recoil**: on/off + intensity (off by default; first shot is always accurate).
+- **Crosshair**: color, length, gap, thickness, center dot. All settings persist (localStorage).
+
+The HUD tracks **kills, accuracy %, headshot %, average reaction time**, and session time
+(reaction time = from when the enemy clears the corner to your killing shot).
+
+## Develop / test
+Pure game logic (damage, peek sampling, sensitivity, fire-rate, recoil, stats, FOV) is
+unit-tested with Node's built-in runner:
+
+```
+node --test tests/constants.test.js tests/logic.test.js
+```
+
+## Layout
+```
+index.html       overlays + ordered <script> tags
+three.min.js      Three.js r128 (vendored)
+js/constants.js   Valorant reference values + FOV helper   (tested)
+js/logic.js       pure game logic                          (tested)
+js/scene.js       renderer, FOV-103 camera, environment
+js/player.js      pointer lock + mouse look + sensitivity
+js/enemy.js       peeking bot with head/body/legs hitboxes
+js/weapon.js      Vandal hitscan, damage, fire-rate, recoil
+js/hud.js         crosshair + stats overlay
+js/settings.js    settings panel + persistence
+js/game.js        composition root + spawn/hold/respawn state machine
+```
