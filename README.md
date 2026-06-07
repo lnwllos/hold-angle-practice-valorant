@@ -57,6 +57,10 @@ almost-early/almost-late based on the leading/trailing half of the head.
   counts, so cm/360 is approximate — use the fine-tune slider.)*
 - **Vandal recoil**: on/off + intensity (off by default; first shot is always accurate).
 - **Crosshair**: color, length, gap, thickness, center dot. All settings persist (localStorage).
+- **Log recording**: when on, records your aim (yaw/pitch), player/bot positions, and events
+  (spawn/visible/shot/kill/flash) at a fixed **128 Hz**. Turn it **off** to download one
+  `holdangle-log-*.json` per session — a structured file meant for AI-assisted analysis of
+  aim, flicks, and sensitivity. Auto-stops and downloads at a ~10-minute safety cap.
 
 The HUD tracks **kills, accuracy %, headshot %, average reaction time**, and session time
 (reaction time = from when the enemy clears the corner to your killing shot).
@@ -88,5 +92,6 @@ js/trackdrone.js  destructible Tracking Blind Drone: flies/scans/locks-on, fires
 js/weapon.js      Vandal hitscan over a target set; damage, fire-rate, recoil, wall occlusion
 js/hud.js         crosshair + stats overlay
 js/settings.js    settings panel + persistence
+js/recorder.js    aim log recorder: 128Hz tick buffer + events + JSON export
 js/game.js        composition root + spawn/hold/respawn state machine
 ```
