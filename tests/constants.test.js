@@ -49,3 +49,21 @@ test('hfovToVfov keeps horizontal FOV constant across aspect ratios', () => {
   const std = hfovToVfov(103, 16 / 9);
   assert.ok(wide < std, `expected wider aspect to give smaller V-FOV: ${wide} < ${std}`);
 });
+
+test('VALO peek-mode blocks hold target/wall/smoke tuning', () => {
+  const P = VALO.PEEK_TARGET;
+  assert.deepStrictEqual(P.count, { min: 1, max: 5 });
+  assert.ok(P.spreadXFactor > 0 && P.spreadXMin > 0 && P.spreadXMax >= P.spreadXMin);
+  assert.ok(P.depthSpreadFactor > 0 && P.depthSpreadMax > 0);
+  assert.ok(P.minSeparation > 0);
+
+  const W = VALO.WALL_PEEK;
+  assert.ok(W.wallZ < 0 && W.wallW > 0 && W.wallH > 0 && W.wallThickness > 0);
+  assert.ok(W.behindCoverHalfWidth > 0 && typeof W.behindCoverZ === 'number');
+  assert.ok(W.bounds.x > 0 && W.bounds.zFront < W.bounds.zBack);
+
+  const S = VALO.SMOKE;
+  assert.ok(S.coverDuration > 0 && S.fadeDuration > 0);
+  assert.ok(S.z < 0 && S.w > 0 && S.h > 0 && typeof S.color === 'number');
+  assert.ok(S.bounds.x > 0 && S.bounds.zFront < S.bounds.zBack);
+});

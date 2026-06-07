@@ -28,6 +28,22 @@ const VALO = {
     blindZeroDeg: 100,    // angle(view, flash) >= this -> no blind
     rampUp: 0.05,         // s — white overlay rises to full this fast
   },
+  PEEK_TARGET: {
+    count: { min: 1, max: 5 },
+    spreadXFactor: 0.3, spreadXMin: 2.5, spreadXMax: 7, // half-width of bot X spread vs distance
+    depthSpreadFactor: 0.4, depthSpreadMax: 6,          // how much NEARER than `distance` bots may stand
+    minSeparation: 1.2,                                  // m between bots (no overlap)
+  },
+  WALL_PEEK: {
+    wallZ: -2.5, wallW: 3, wallH: 3, wallThickness: 0.5, // cover wall in front of the player
+    behindCoverHalfWidth: 0.6, behindCoverZ: -0.5,        // "safe pocket" that arms the next wave
+    bounds: { x: 4, zFront: -1.5, zBack: 1.5 },           // player movement clamp
+  },
+  SMOKE: {
+    coverDuration: 3.0, fadeDuration: 0.6,               // s — block, then fade and stay clear
+    z: -3, w: 10, h: 7, color: 0xc9ced6,                 // opaque box that fills the view toward bots
+    bounds: { x: 3, zFront: -0.5, zBack: 1.5 },
+  },
 };
 
 // Convert horizontal FOV (degrees) to the vertical FOV (degrees) a THREE camera needs,
