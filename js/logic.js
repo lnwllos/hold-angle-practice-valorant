@@ -160,6 +160,12 @@ function classifyStationaryShot(hitZone) {
   return null;
 }
 
+// The player is "behind cover" (arms the next wall-peek wave) when centered within the
+// pocket and not pushed forward past it. behindZ is the most-forward z still counted as safe.
+function isBehindCover(x, z, halfWidth, behindZ) {
+  return Math.abs(x) <= halfWidth && z >= behindZ;
+}
+
 // --- Recoil (approximate Vandal pattern) ---
 // shotIndex is the 0-based index within a continuous burst. First shot is dead accurate.
 // Vertical climbs quickly over the first ~5 shots then slows; horizontal sway starts after.
@@ -188,7 +194,7 @@ if (typeof module !== 'undefined' && module.exports) {
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
     sampleSpawnDelay, sampleEnemyCount, randomTargetPlacements, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
     flashOverlayOpacity,
-    classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot,
+    classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
   };

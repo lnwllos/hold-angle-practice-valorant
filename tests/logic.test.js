@@ -257,3 +257,13 @@ test('classifyStationaryShot maps head/body/legs and misses', () => {
   assert.strictEqual(L.classifyStationaryShot('wall'), null);
   assert.strictEqual(L.classifyStationaryShot(null), null);
 });
+
+// --- peek mode: behind-cover detection ---
+test('isBehindCover true only inside the pocket on both axes', () => {
+  // halfWidth 0.6, behindZ -0.5
+  assert.strictEqual(L.isBehindCover(0, 0, 0.6, -0.5), true);
+  assert.strictEqual(L.isBehindCover(0.6, -0.5, 0.6, -0.5), true);  // on the boundary
+  assert.strictEqual(L.isBehindCover(0.7, 0, 0.6, -0.5), false);    // too far sideways
+  assert.strictEqual(L.isBehindCover(-0.7, 0, 0.6, -0.5), false);   // symmetric
+  assert.strictEqual(L.isBehindCover(0, -0.6, 0.6, -0.5), false);   // pushed forward past pocket
+});
