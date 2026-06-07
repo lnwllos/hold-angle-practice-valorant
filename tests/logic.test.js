@@ -333,3 +333,21 @@ test('angleBetweenDeg returns the angle in degrees between [x,y,z] vectors', () 
   assert.ok(Math.abs(L.angleBetweenDeg([1, 0, 0], [1, 1, 0]) - 45) < 1e-6);
   assert.strictEqual(L.angleBetweenDeg([0, 0, 0], [1, 0, 0]), 0);
 });
+
+test('buildSummary derives rounded session stats and carries stoppedBy', () => {
+  const s = L.makeStats();
+  s.shots = 10; s.hits = 8; s.headshots = 4; s.kills = 4; s.reactionTotalMs = 1248;
+  const out = L.buildSummary(s, 'toggle');
+  assert.strictEqual(out.shots, 10);
+  assert.strictEqual(out.hits, 8);
+  assert.strictEqual(out.kills, 4);
+  assert.strictEqual(out.accuracyPct, 80);
+  assert.strictEqual(out.headshotPct, 50);
+  assert.strictEqual(out.avgReactionMs, 312);
+  assert.strictEqual(out.stoppedBy, 'toggle');
+  const z = L.buildSummary(L.makeStats(), 'cap');
+  assert.strictEqual(z.accuracyPct, 0);
+  assert.strictEqual(z.headshotPct, 0);
+  assert.strictEqual(z.avgReactionMs, 0);
+  assert.strictEqual(z.stoppedBy, 'cap');
+});

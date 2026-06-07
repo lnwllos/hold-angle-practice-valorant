@@ -248,6 +248,19 @@ function statAccuracy(s) { return s.shots ? s.hits / s.shots : 0; }
 function statHeadshotPct(s) { return s.hits ? s.headshots / s.hits : 0; }
 function statAvgReaction(s) { return s.kills ? s.reactionTotalMs / s.kills : 0; }
 
+// End-of-session summary for the aim log. stoppedBy: 'toggle' | 'cap'.
+function buildSummary(s, stoppedBy) {
+  return {
+    shots: s.shots,
+    hits: s.hits,
+    kills: s.kills,
+    accuracyPct: Math.round(statAccuracy(s) * 100),
+    headshotPct: Math.round(statHeadshotPct(s) * 100),
+    avgReactionMs: Math.round(statAvgReaction(s)),
+    stoppedBy: stoppedBy || 'toggle',
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
@@ -256,7 +269,7 @@ if (typeof module !== 'undefined' && module.exports) {
     flashOverlayOpacity, nearsightIntensity, lockOnProgress, inScanCone, flashDestroyedInTime,
     classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover, smokePhase,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
-    statAccuracy, statHeadshotPct, statAvgReaction,
+    statAccuracy, statHeadshotPct, statAvgReaction, buildSummary,
     ticksToEmit, angleBetweenDeg,
   };
 }
