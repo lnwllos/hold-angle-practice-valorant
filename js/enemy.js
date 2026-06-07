@@ -23,26 +23,9 @@ function Enemy(scene, cfg) {
   wall.position.set(innerEdge + side * (wallW / 2), 4, wallZ);
   scene.add(wall);
 
-  // Bot body parts (rough Valorant agent proportions, meters).
-  const group = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: 0xc94f4f });
-  const headMat = new THREE.MeshStandardMaterial({ color: 0xe0a64f });
-
-  const legs = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.9, 0.35), mat);
-  legs.position.y = 0.45;
-  legs.userData.zone = 'legs';
-
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.8, 0.35), mat);
-  body.position.y = 1.25;
-  body.userData.zone = 'body';
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), headMat);
-  head.position.y = 1.8;
-  head.userData.zone = 'head';
-
-  group.add(legs, body, head);
+  // Bot body parts (shared with peek-mode targets).
+  const { group, hitboxes } = makeBotParts();
   scene.add(group);
-  const hitboxes = [legs, body, head];
 
   // Lateral motion at the enemy's depth: hidden behind the wall (outer side), emerge inward.
   const hiddenX = innerEdge + side * 1.2;            // behind the wall (occluded)
@@ -78,22 +61,14 @@ function Enemy(scene, cfg) {
     if (!visible && side * (x - edgeAtEnemy) < 0) visible = true;
   }
 
-  function disposeObject(obj) {
-    if (obj.geometry) obj.geometry.dispose();
-    if (obj.material) {
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach(m => m.dispose());
-    }
-  }
-
   function kill() { alive = false; scene.remove(group); }
   function dispose() {
     if (disposed) return;
     disposed = true;
     scene.remove(group);
     scene.remove(wall);
-    group.traverse(disposeObject);
-    disposeObject(wall);
+    group.traverse(disposeBotObject);
+    disposeBotObject(wall);
   }
 
   return {
