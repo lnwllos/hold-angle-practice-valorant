@@ -19,7 +19,7 @@ test('VALO.FLASH holds per-agent windup/blind/color/flight and tuning fields', (
   const f = VALO.FLASH;
   const keys = Object.keys(f).sort();
   assert.deepStrictEqual(keys,
-    ['blindFullDeg', 'blindZeroDeg', 'breach', 'enemyPeekDelay', 'eyeorb', 'highSpawnY', 'nearsight', 'phoenix', 'rampUp', 'trackdrone', 'yoru']);
+    ['blindConeDeg', 'blindFullDeg', 'blindZeroDeg', 'breach', 'enemyPeekDelay', 'eyeorb', 'highSpawnY', 'nearsight', 'nearsightColor', 'nearsightFar', 'nearsightNear', 'nsFallTau', 'nsRiseTau', 'phoenix', 'rampUp', 'trackdrone', 'yoru']);
   for (const k of ['breach', 'phoenix', 'yoru']) {
     assert.ok(typeof f[k].windup === 'number' && f[k].windup > 0, `${k}.windup`);
     assert.ok(typeof f[k].blind === 'number' && f[k].blind > 0, `${k}.blind`);
