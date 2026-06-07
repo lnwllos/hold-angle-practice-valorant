@@ -19,7 +19,7 @@ test('VALO.FLASH holds per-agent windup/blind/color/flight and tuning fields', (
   const f = VALO.FLASH;
   const keys = Object.keys(f).sort();
   assert.deepStrictEqual(keys,
-    ['blindFullDeg', 'blindZeroDeg', 'breach', 'enemyPeekDelay', 'phoenix', 'rampUp', 'yoru']);
+    ['blindFullDeg', 'blindZeroDeg', 'breach', 'enemyPeekDelay', 'eyeorb', 'nearsight', 'phoenix', 'rampUp', 'trackdrone', 'yoru']);
   for (const k of ['breach', 'phoenix', 'yoru']) {
     assert.ok(typeof f[k].windup === 'number' && f[k].windup > 0, `${k}.windup`);
     assert.ok(typeof f[k].blind === 'number' && f[k].blind > 0, `${k}.blind`);
@@ -66,4 +66,17 @@ test('VALO peek-mode blocks hold target/wall/smoke tuning', () => {
   assert.ok(S.coverDuration > 0 && S.fadeDuration > 0);
   assert.ok(S.z < 0 && S.w > 0 && S.h > 0 && typeof S.color === 'number');
   assert.ok(S.bounds.x > 0 && S.bounds.zFront < S.bounds.zBack);
+});
+
+test('destructible flash agents are defined with hit-count health', () => {
+  for (const key of ['eyeorb', 'trackdrone']) {
+    const a = VALO.FLASH[key];
+    assert.ok(a, `${key} missing from VALO.FLASH`);
+    assert.strictEqual(a.type, 'destructible');
+    assert.ok(a.destroyHits >= 1, `${key} needs destroyHits >= 1`);
+    assert.ok(a.blind > 0, `${key} needs blind > 0`);
+  }
+  assert.strictEqual(VALO.FLASH.eyeorb.effect, 'nearsight');
+  assert.strictEqual(VALO.FLASH.trackdrone.effect, 'overlay');
+  assert.ok(VALO.FLASH.nearsight.maxBlur > 0);
 });

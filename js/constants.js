@@ -23,6 +23,30 @@ const VALO = {
     breach:  { windup: 0.5, blind: 2.0,  color: 0xfff2b0, flight: 'wall',  travel: 0.12 }, // Flashpoint — yellow-white, through-wall at a random spot near the corner
     phoenix: { windup: 0.6, blind: 1.3,  color: 0xffb060, flight: 'curve', travel: 0.22 }, // Curveball  — orange, fast curve around the corner
     yoru:    { windup: 0.6, blind: 1.75, color: 0xbcd6ff, flight: 'float', speed: 6.0 },    // Blindside  — blue, floats out from the wall (speed ≈ m/s, exact not published)
+    // Destructible flashes (you SHOOT these to cancel the blind). HP is measured in bullet
+    // HITS, not EHP. Original abstract visuals — no official names/assets. Hold mode only.
+    eyeorb: {
+      type: 'destructible', effect: 'nearsight',
+      color: 0xff5fae,   // abstract magenta-pink glow (not an eye)
+      flight: 'emerge',  // emerges from the wall, floats ~1.5 m forward, stops + hovers
+      travel: 0.25,      // s — spawn travel to resting position
+      windup: 0.45,      // s — active -> full-effect arm delay (fair reaction window)
+      destroyHits: 2,    // bullets to destroy
+      blind: 1.6,        // s — max nearsight duration (looking straight at it)
+    },
+    trackdrone: {
+      type: 'destructible', effect: 'overlay',
+      color: 0x66e0a0,        // abstract green glow (not a creature)
+      flight: 'scan',         // launches from the wall, crosses the view laterally while scanning
+      flightTime: 1.4,        // s — active flight duration before it expires
+      scanStartDelay: 0.2,    // s — after launch before scanning begins
+      lockOnTime: 0.4,        // s — player must stay locked this long before it fires
+      scanRange: 26,          // m
+      scanConeDeg: 60,        // total scan cone angle (degrees)
+      destroyHits: 2,
+      blind: 1.5,             // s — strong overlay blind on a successful hit
+    },
+    nearsight: { maxBlur: 6, vignetteStrength: 0.85 }, // CSS nearsight tuning
     enemyPeekDelay: 0.15, // s — after detonation before the enemy starts peeking
     blindFullDeg: 35,     // angle(view, flash) <= this -> full blind
     blindZeroDeg: 100,    // angle(view, flash) >= this -> no blind
