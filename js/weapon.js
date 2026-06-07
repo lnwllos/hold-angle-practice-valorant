@@ -32,9 +32,11 @@ function Weapon(deps) {
 
   function fireOne() {
     const s = deps.getSettings();
+    const shotBurstIndex = burstIndex + 1;
+    let recoil = { yaw: 0, pitch: 0 };
     if (s.recoilOn) {
-      const r = recoilOffset(burstIndex, s.recoilIntensity);
-      deps.player.addKick(r.yaw, r.pitch);
+      recoil = recoilOffset(burstIndex, s.recoilIntensity);
+      deps.player.addKick(recoil.yaw, recoil.pitch);
     }
     burstIndex += 1;
 
@@ -50,6 +52,7 @@ function Weapon(deps) {
 
     const hits = ray.intersectObjects(meshes, false);
     const nearest = hits[0];
+    const blockedByWall = !!(nearest && !nearest.object.userData.bot);
 
     // aimX defaults to where the ray would cross the primary target's depth (miss-side calc).
     let aimX = primary ? rayXAtZ(ray.ray, primary.z) : NaN;
@@ -67,6 +70,12 @@ function Weapon(deps) {
       hitZone,
       isHead: hitZone === 'head',
       hitFlash: !!(bot && bot.isFlash),
+      target: primary,
+      hitTarget: bot,
+      burstIndex: shotBurstIndex,
+      recoilYawDeg: recoil.yaw,
+      recoilPitchDeg: recoil.pitch,
+      blockedByWall,
       aimX,
       botX: primary ? primary.x : NaN,
       movementDir: primary ? primary.movementDir : 0,

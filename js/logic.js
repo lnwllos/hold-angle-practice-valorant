@@ -239,24 +239,35 @@ function angleBetweenDeg(a, b) {
 
 // --- Session stats ---
 function makeStats() {
-  return { shots: 0, hits: 0, headshots: 0, kills: 0, reactionTotalMs: 0 };
+  return { shots: 0, hits: 0, headshots: 0, kills: 0, reactionTotalMs: 0, reactionSamples: 0 };
 }
 function recordShot(s) { s.shots += 1; }
 function recordHit(s, isHead) { s.hits += 1; if (isHead) s.headshots += 1; }
-function recordKill(s, reactionMs) { s.kills += 1; s.reactionTotalMs += reactionMs; }
+function recordKill(s, reactionMs) {
+  s.kills += 1;
+  if (Number.isFinite(reactionMs)) {
+    s.reactionTotalMs += reactionMs;
+    s.reactionSamples = (s.reactionSamples || 0) + 1;
+  }
+}
 function statAccuracy(s) { return s.shots ? s.hits / s.shots : 0; }
 function statHeadshotPct(s) { return s.hits ? s.headshots / s.hits : 0; }
-function statAvgReaction(s) { return s.kills ? s.reactionTotalMs / s.kills : 0; }
+function statAvgReaction(s) {
+  const samples = s.reactionSamples || 0;
+  return samples ? s.reactionTotalMs / samples : 0;
+}
 
 // End-of-session summary for the aim log. stoppedBy: 'toggle' | 'cap'.
 function buildSummary(s, stoppedBy) {
+  const reactionSamples = s.reactionSamples || 0;
   return {
     shots: s.shots,
     hits: s.hits,
     kills: s.kills,
     accuracyPct: Math.round(statAccuracy(s) * 100),
     headshotPct: Math.round(statHeadshotPct(s) * 100),
-    avgReactionMs: Math.round(statAvgReaction(s)),
+    avgReactionMs: reactionSamples ? Math.round(statAvgReaction(s)) : null,
+    reactionSamples,
     stoppedBy: stoppedBy || 'toggle',
   };
 }

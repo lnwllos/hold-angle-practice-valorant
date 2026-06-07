@@ -21,6 +21,14 @@
   let windupSoundPlayed = false;
   let detonationHandled = false;
   let recorder = null;
+  let nextRoundId = 1;
+  let activeRoundId = null;
+  let nextWaveId = 1;
+  let activeWaveId = null;
+  let nextTargetId = 1;
+  let lastShotEventAtMs = null;
+  let lastPlayerSpeedMps = 0;
+  const targetMeta = new WeakMap();
 
   // --- aim log helpers ---
   const R2D = 180 / Math.PI;
@@ -29,6 +37,29 @@
   const _head = new THREE.Vector3();
   const round2 = n => Math.round(n * 100) / 100;
   const round3 = n => Math.round(n * 1000) / 1000;
+  function normDeg(deg) {
+    while (deg > 180) deg -= 360;
+    while (deg < -180) deg += 360;
+    return deg;
+  }
+
+  function assignTargetMeta(tgt, fields) {
+    if (!tgt) return null;
+    const existing = targetMeta.get(tgt) || { targetId: nextTargetId++ };
+    const meta = Object.assign(existing, fields || {});
+    targetMeta.set(tgt, meta);
+    return meta;
+  }
+
+  function targetEventFields(tgt) {
+    const meta = tgt ? assignTargetMeta(tgt) : null;
+    return {
+      targetId: meta ? meta.targetId : null,
+      roundId: meta && meta.roundId != null ? meta.roundId : null,
+      waveId: meta && meta.waveId != null ? meta.waveId : null,
+      targetIndex: meta && meta.targetIndex != null ? meta.targetIndex : null,
+    };
+  }
 
   // The bot the player should currently be aiming at: the held enemy in hold mode, else the
   // nearest alive peek-mode target. null when there is no live bot.
@@ -46,31 +77,61 @@
     return best;
   }
 
-  // Head world position, visibility, and crosshair->head angle for the current aim target.
-  function targetInfo() {
-    const tgt = aimTarget();
+  // Head world position, visibility, and crosshair->head angles for an aim target.
+  function targetInfo(tgt, includeHead) {
+    tgt = tgt || aimTarget();
     if (!tgt) return null;
     three.camera.getWorldPosition(_camPos);
     three.camera.getWorldDirection(_fwd);
     tgt.updateMatrixWorld();
     tgt.hitboxes[2].getWorldPosition(_head); // head is index 2 in makeBotParts()
     const to = [_head.x - _camPos.x, _head.y - _camPos.y, _head.z - _camPos.z];
-    return {
-      head: [round3(_head.x), round3(_head.y), round3(_head.z)],
+    const horizontal = Math.hypot(to[0], to[2]);
+    const targetYawDeg = Math.atan2(-to[0], -to[2]) * R2D;
+    const targetPitchDeg = Math.atan2(to[1], horizontal) * R2D;
+    const yawDeg = three.camera.rotation.y * R2D;
+    const pitchDeg = three.camera.rotation.x * R2D;
+    const fields = targetEventFields(tgt);
+    const info = Object.assign(fields, {
       visible: !!tgt.visible,
       aimErrorDeg: round2(angleBetweenDeg([_fwd.x, _fwd.y, _fwd.z], to)),
+      yawErrorDeg: round2(normDeg(yawDeg - targetYawDeg)),
+      pitchErrorDeg: round2(pitchDeg - targetPitchDeg),
+    });
+    if (includeHead) {
+      info.head = [round3(_head.x), round3(_head.y), round3(_head.z)];
+      info.distanceM = round2(Math.hypot(to[0], to[1], to[2]));
+      info.targetYawDeg = round2(targetYawDeg);
+      info.targetPitchDeg = round2(targetPitchDeg);
+    }
+    return info;
+  }
+
+  // One fixed-rate sample of player aim/position/firing + compact target info.
+  function snapshot() {
+    return {
+      yaw: round2(three.camera.rotation.y * R2D),
+      pitch: round2(three.camera.rotation.x * R2D),
+      pos: [round3(player.position.x), round3(player.position.y), round3(player.position.z)],
+      speedMps: round2(lastPlayerSpeedMps),
+      firing: weapon.isFiring(),
+      target: targetInfo(null, false),
     };
   }
 
-  // One 128Hz sample of player aim/position/firing + target info.
-  function snapshot() {
-    return {
-      yaw: round2(player.yaw * R2D),
-      pitch: round2(player.pitch * R2D),
-      pos: [round3(player.position.x), round3(player.position.y), round3(player.position.z)],
-      firing: weapon.isFiring(),
-      target: targetInfo(),
-    };
+  function shotReason(info, ti) {
+    if (info.hitFlash) return 'flash-hit';
+    if (info.blockedByWall) return 'wall-blocked';
+    if (!info.target) return 'no-target';
+    if (info.hitZone === 'head') return 'hit-head';
+    if (info.hitZone === 'body' || info.hitZone === 'legs') return `hit-${info.hitZone}`;
+    if (!ti) return 'miss-no-target-context';
+    if (!ti.visible) return 'target-not-visible';
+    const yawAbs = Math.abs(ti.yawErrorDeg || 0);
+    const pitchAbs = Math.abs(ti.pitchErrorDeg || 0);
+    if (pitchAbs >= yawAbs && pitchAbs > 0.25) return ti.pitchErrorDeg > 0 ? 'miss-high' : 'miss-low';
+    if (yawAbs > 0.25) return ti.yawErrorDeg > 0 ? 'miss-left' : 'miss-right';
+    return 'miss-centered';
   }
 
   // The mutable config that affects aim/analysis. Logged in the session header at start AND
@@ -119,14 +180,32 @@
       on: {
         shot: info => {
           if (recorder && recorder.isRecording()) {
-            const ti = targetInfo();
-            recorder.logEvent('shot', {
-              yaw: round2(player.yaw * R2D),
-              pitch: round2(player.pitch * R2D),
+            const nowMs = performance.now();
+            const ti = targetInfo(info.target, true);
+            const fields = targetEventFields(info.target);
+            recorder.logEvent('shot', Object.assign(fields, {
+              yaw: round2(three.camera.rotation.y * R2D),
+              pitch: round2(three.camera.rotation.x * R2D),
+              baseYaw: round2(player.yaw * R2D),
+              basePitch: round2(player.pitch * R2D),
               aimErrorDeg: ti ? ti.aimErrorDeg : null,
+              yawErrorDeg: ti ? ti.yawErrorDeg : null,
+              pitchErrorDeg: ti ? ti.pitchErrorDeg : null,
+              targetHead: ti ? ti.head : null,
+              targetDistanceM: ti ? ti.distanceM : null,
+              targetVisible: ti ? ti.visible : false,
+              timeSinceVisibleMs: mode === 'hold' && visibleAt != null ? Math.round(nowMs - visibleAt * 1000) : null,
+              timeSinceLastShotMs: lastShotEventAtMs == null ? null : Math.round(nowMs - lastShotEventAtMs),
+              burstIndex: info.burstIndex,
+              recoilYawDeg: round2(info.recoilYawDeg || 0),
+              recoilPitchDeg: round2(info.recoilPitchDeg || 0),
+              playerSpeedMps: round2(lastPlayerSpeedMps),
+              blockedByWall: !!info.blockedByWall,
               hitZone: info.hitZone || 'miss',
               hit: !!info.hitZone && !info.hitFlash,
-            });
+              reason: shotReason(info, ti),
+            }));
+            lastShotEventAtMs = nowMs;
           }
           recordShot(stats);
           if (info.hitFlash) { hud.showHitmarker(); return; } // shooting a flash: marker only
@@ -140,15 +219,21 @@
         kill: (bot) => {
           if (bot && bot.isFlash) return; // flash destroyed: handled in updateState; not an enemy kill
           if (mode === 'hold') {
-            const reaction = visibleAt != null ? (performance.now() / 1000 - visibleAt) * 1000 : 0;
+            const reaction = visibleAt != null ? (performance.now() / 1000 - visibleAt) * 1000 : null;
             recordKill(stats, reaction);
-            if (recorder && recorder.isRecording()) recorder.logEvent('kill', { reactionMs: Math.round(reaction) });
+            if (recorder && recorder.isRecording()) {
+              recorder.logEvent('kill', Object.assign(targetEventFields(bot), {
+                reactionMs: reaction == null ? null : Math.round(reaction),
+              }));
+            }
             effects.playKill();
             state = 'dead';
             respawnAt = performance.now() / 1000 + resolveRespawnDelay();
           } else {
-            recordKill(stats, 0); // peek modes do not time reactions
-            if (recorder && recorder.isRecording()) recorder.logEvent('kill', { reactionMs: 0 });
+            recordKill(stats, null); // peek modes do not time reactions
+            if (recorder && recorder.isRecording()) {
+              recorder.logEvent('kill', Object.assign(targetEventFields(bot), { reactionMs: null }));
+            }
             effects.playKill();
             // PeekMode detects the wave being cleared in its own update().
           }
@@ -258,6 +343,8 @@
     if (peekMode) { peekMode.dispose(); peekMode = null; }
     state = 'waiting';
     visibleAt = null;
+    activeRoundId = null;
+    activeWaveId = null;
 
     if (mode === 'hold') {
       player.setMovementEnabled(false);
@@ -276,6 +363,36 @@
         },
         getRespawnDelay: () => resolveRespawnDelay(),
         getPlayerPos: () => ({ x: player.position.x, z: player.position.z }),
+        onWaveSpawn: info => {
+          activeRoundId = null;
+          activeWaveId = nextWaveId++;
+          if (recorder && recorder.isRecording()) {
+            recorder.logEvent('wave-spawn', {
+              waveId: activeWaveId,
+              trainingMode: mode,
+              count: info.count,
+              distanceM: settings.get().distance,
+              placements: info.placements.map(p => [round3(p.x), round3(p.z)]),
+            });
+          }
+        },
+        onTargetSpawn: (bot, info) => {
+          const meta = assignTargetMeta(bot, {
+            roundId: null,
+            waveId: activeWaveId,
+            targetIndex: info.index + 1,
+          });
+          if (recorder && recorder.isRecording()) {
+            recorder.logEvent('target-spawn', {
+              targetId: meta.targetId,
+              waveId: activeWaveId,
+              targetIndex: info.index + 1,
+              trainingMode: mode,
+              pos: [round3(info.pos.x), 0, round3(info.pos.z)],
+              visible: true,
+            });
+          }
+        },
         rng: Math.random,
       });
       player.setColliders(peekMode.colliders());
@@ -310,10 +427,15 @@
     const side = opts && opts.side != null ? opts.side : resolveSide();
     const peekWidth = opts && opts.peekWidth != null ? opts.peekWidth : resolvePeekWidth();
     enemy = Enemy(three.scene, { distance: settings.get().distance, peekWidth, side });
+    activeRoundId = nextRoundId++;
+    activeWaveId = null;
+    const meta = assignTargetMeta(enemy, { roundId: activeRoundId, waveId: null, targetIndex: 1 });
     state = 'active';
     visibleAt = null;
     if (recorder && recorder.isRecording()) {
       recorder.logEvent('spawn', {
+        roundId: activeRoundId,
+        targetId: meta.targetId,
         side: side < 0 ? 'left' : 'right',
         peekWidthM: round2(peekWidth),
         distanceM: settings.get().distance,
@@ -376,7 +498,11 @@
     state = 'flashing';                                  // override: hold the bot until the blind
     flash = makeFlash(flashKey, side);
     if (recorder && recorder.isRecording()) {
-      recorder.logEvent('flash', { agent: flashKey, windupS: flashAgent.windup, blindMaxS: flashAgent.blind });
+      recorder.logEvent('flash', Object.assign(targetEventFields(enemy), {
+        agent: flashKey,
+        windupS: flashAgent.windup,
+        blindMaxS: flashAgent.blind,
+      }));
     }
     windupSoundPlayed = false;
     detonationHandled = false;
@@ -399,7 +525,11 @@
     }
     const dur = blindDuration(flashAgent.blind, factor);
     if (recorder && recorder.isRecording()) {
-      recorder.logEvent('blind', { agent: flashKey, durationS: round2(dur), factor: round2(factor) });
+      recorder.logEvent('blind', Object.assign(targetEventFields(enemy), {
+        agent: flashKey,
+        durationS: round2(dur),
+        factor: round2(factor),
+      }));
     }
     // Nearsight scales BOTH duration and peak intensity by factor (a stronger look-away
     // incentive than the overlay blind, which scales duration only).
@@ -444,7 +574,7 @@
       enemy.update(lastDt);
       if (visibleAt == null && enemy.visible) {
         visibleAt = nowSec; // reaction clock starts
-        if (recorder && recorder.isRecording()) recorder.logEvent('visible', {});
+        if (recorder && recorder.isRecording()) recorder.logEvent('visible', targetEventFields(enemy));
       }
       if (settings.get().respawnOnFullPeek && !wasFullPeeked && enemy.fullPeeked) {
         // Keep the cover wall during the respawn delay; dispose it only when the next
@@ -470,7 +600,11 @@
   function update(dt) {
     lastDt = dt;
     const nowSec = performance.now() / 1000;
+    const px = player.position.x, py = player.position.y, pz = player.position.z;
     player.update(dt);
+    lastPlayerSpeedMps = dt > 0
+      ? Math.hypot(player.position.x - px, player.position.y - py, player.position.z - pz) / dt
+      : 0;
     let autoRespawned = false;
     if (mode === 'hold') autoRespawned = updateState(nowSec);
     else if (peekMode) peekMode.update(dt);

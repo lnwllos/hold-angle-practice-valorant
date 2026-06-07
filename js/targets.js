@@ -41,7 +41,11 @@ function StationaryBot(scene, pos) {
 
 // A wave of stationary bots. cfg: { placements: [{x, z}, ...] }.
 function TargetWave(scene, cfg) {
-  const all = cfg.placements.map(p => StationaryBot(scene, p));
+  const all = cfg.placements.map((p, i) => {
+    const bot = StationaryBot(scene, p);
+    if (cfg.onBot) cfg.onBot(bot, i, p);
+    return bot;
+  });
   return {
     get bots() { return all.filter(b => b.alive); },
     get cleared() { return all.length > 0 && all.every(b => !b.alive); },

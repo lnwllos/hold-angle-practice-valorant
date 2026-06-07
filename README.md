@@ -57,12 +57,16 @@ almost-early/almost-late based on the leading/trailing half of the head.
   counts, so cm/360 is approximate — use the fine-tune slider.)*
 - **Vandal recoil**: on/off + intensity (off by default; first shot is always accurate).
 - **Crosshair**: color, length, gap, thickness, center dot. All settings persist (localStorage).
-- **Log recording**: when on, records your aim (yaw/pitch), player/bot positions, and events
-  (spawn/visible/shot/kill/flash/blind) at a fixed **128 Hz**. Turn it **off** to download one
+- **Log recording**: when on, records lightweight aim/player ticks plus rich shot/context events
+  (`spawn`/`visible`/`wave-spawn`/`target-spawn`/`shot`/`kill`/`flash`/`blind`). Turn it **off** to download one
   `holdangle-log-*.json` per session — a structured file meant for AI-assisted analysis of
-  aim, flicks, and sensitivity. The session header captures your config at the start; if you
-  change settings/mode or reset stats mid-recording, that is logged as a `config`/`reset-stats`
-  event so the timeline stays consistent. Auto-stops and downloads at a ~10-minute safety cap.
+  aim, flicks, recoil, and sensitivity. Schema v2 uses a 64 Hz analysis profile, gives each
+  round/wave/target an ID, and stores full shot context: signed yaw/pitch error, target
+  head/distance, time since visible, time since last shot, burst index, recoil offset, player
+  speed, wall-block status, and a readable shot reason. The session header captures your config
+  at the start; if you change settings/mode or reset stats mid-recording, that is logged as a
+  `config`/`reset-stats` event and split into segment summaries. Auto-stops and downloads at a
+  ~10-minute safety cap.
 
 The HUD tracks **kills, accuracy %, headshot %, average reaction time**, and session time
 (reaction time = from when the enemy clears the corner to your killing shot).

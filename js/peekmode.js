@@ -7,6 +7,8 @@
 //   getConfig: () => ({ distance, countMode, count, countMax }), // read live each wave
 //   getRespawnDelay: () => seconds,                              // delay before the next wave
 //   getPlayerPos: () => ({ x, z }),
+//   onWaveSpawn: ({ variant, count, placements }) => void,
+//   onTargetSpawn: (bot, { variant, index, count, pos }) => void,
 //   rng: () => [0,1),
 // }
 function PeekMode(scene, cfg) {
@@ -55,7 +57,13 @@ function PeekMode(scene, cfg) {
     const c = cfg.getConfig();
     const count = sampleEnemyCount(c.countMode, c.count, c.countMax, rng);
     const placements = randomTargetPlacements(count, placementBounds(), rng);
-    wave = TargetWave(scene, { placements });
+    if (cfg.onWaveSpawn) cfg.onWaveSpawn({ variant: cfg.variant, count, placements });
+    wave = TargetWave(scene, {
+      placements,
+      onBot: (bot, index, pos) => {
+        if (cfg.onTargetSpawn) cfg.onTargetSpawn(bot, { variant: cfg.variant, index, count, pos });
+      },
+    });
   }
 
   // initial round

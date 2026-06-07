@@ -1,4 +1,4 @@
-// Aim log recorder: while enabled, captures fixed-rate (128Hz) aim/position ticks plus
+// Aim log recorder: while enabled, captures fixed-rate aim/position ticks plus
 // discrete gameplay events, then downloads one JSON file per session. Pure math lives in
 // logic.js (ticksToEmit / buildSummary); this module owns the buffers, timing, the safety
 // cap, and the browser download. Classic-script factory, like the rest of js/.
@@ -10,7 +10,7 @@
 //   onCap()     -> called after the safety cap auto-stops a recording
 function Recorder(deps) {
   deps = deps || {};
-  const TICK_HZ = 128;
+  const TICK_HZ = deps.tickHz || 64;
   const PERIOD = 1 / TICK_HZ;            // seconds
   const MAX_TICKS = TICK_HZ * 60 * 10;   // ~10 minutes safety cap
   const now = deps.now || (() => performance.now());
@@ -39,7 +39,7 @@ function Recorder(deps) {
     const r = ticksToEmit(acc, dtSec, PERIOD);
     acc = r.remainder;
     if (r.count <= 0) return;
-    // 128Hz vs a ~60-144fps loop: at most a couple samples per frame. If a slow frame owes
+    // The game loop is ~60-144fps: at most a couple samples per frame. If a slow frame owes
     // several, record the same current snapshot for each so the time axis stays dense.
     const s = snapshot();
     const t = relT();
@@ -58,13 +58,18 @@ function Recorder(deps) {
     if (!recording) return null;
     recording = false;
     const stats = deps.getStats ? deps.getStats() : makeStats();
+    const durationMs = relT();
+    const summary = buildSummary(stats, stoppedBy || 'toggle');
     const obj = {
-      schemaVersion: 1,
-      _readme: 'Aim training log. ticks = fixed 128Hz samples (t in ms from start). ' +
-        'angles in degrees, positions [x,y,z] in meters. events map back to ticks via t. ' +
-        'aimErrorDeg = angle between crosshair and target head; target is null when no live bot.',
-      session: Object.assign({ tickRateHz: TICK_HZ, durationMs: relT() }, meta),
-      summary: buildSummary(stats, stoppedBy || 'toggle'),
+      schemaVersion: 2,
+      logProfile: `analysis-${TICK_HZ}hz`,
+      _readme: 'Aim training log. ticks = fixed-rate samples (t in ms from start). ' +
+        'ticks keep lightweight aim/player state; shot events carry full target/timing context. ' +
+        'angles in degrees, positions [x,y,z] in meters. aimErrorDeg is absolute crosshair-to-head angle; ' +
+        'yawErrorDeg/pitchErrorDeg are signed current-aim minus target-head angles.',
+      session: Object.assign({ tickRateHz: TICK_HZ, durationMs }, meta),
+      summary,
+      segments: buildEventSegments(events, durationMs, meta),
       ticks,
       events,
     };
@@ -75,6 +80,76 @@ function Recorder(deps) {
   }
 
   return { start, stop, tick, logEvent, isRecording: () => recording };
+}
+
+function buildEventSegments(events, durationMs, initialConfig) {
+  const segments = [];
+  let startT = 0;
+  let config = configFields(initialConfig);
+  let summary = makeEventSummary();
+
+  function close(endT, reason) {
+    if (endT < startT) endT = startT;
+    segments.push(Object.assign({
+      startT,
+      endT,
+      reason,
+      summary: finalizeEventSummary(summary),
+    }, config));
+  }
+
+  for (const e of events) {
+    if (e.type === 'config' || e.type === 'reset-stats') {
+      close(e.t, e.type);
+      startT = e.t;
+      summary = makeEventSummary();
+      if (e.type === 'config') config = configFields(e);
+      continue;
+    }
+    countEvent(summary, e);
+  }
+  close(durationMs, 'stop');
+  return segments;
+}
+
+function configFields(src) {
+  src = src || {};
+  return {
+    trainingMode: src.trainingMode || null,
+    distanceM: src.distanceM == null ? null : src.distanceM,
+  };
+}
+
+function makeEventSummary() {
+  return { shots: 0, hits: 0, kills: 0, headshots: 0, reactionTotalMs: 0, reactionSamples: 0 };
+}
+
+function countEvent(s, e) {
+  if (e.type === 'shot') {
+    s.shots += 1;
+    if (e.hit) {
+      s.hits += 1;
+      if (e.hitZone === 'head') s.headshots += 1;
+    }
+  } else if (e.type === 'kill') {
+    s.kills += 1;
+    if (Number.isFinite(e.reactionMs)) {
+      s.reactionTotalMs += e.reactionMs;
+      s.reactionSamples += 1;
+    }
+  }
+}
+
+function finalizeEventSummary(s) {
+  return {
+    shots: s.shots,
+    hits: s.hits,
+    kills: s.kills,
+    accuracyPct: s.shots ? Math.round((s.hits / s.shots) * 100) : 0,
+    headshotPct: s.hits ? Math.round((s.headshots / s.hits) * 100) : 0,
+    avgReactionMs: s.reactionSamples ? Math.round(s.reactionTotalMs / s.reactionSamples) : null,
+    reactionSamples: s.reactionSamples,
+  };
 }
 
 function filenameNow() {
