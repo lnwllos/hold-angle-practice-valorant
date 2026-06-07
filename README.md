@@ -29,6 +29,11 @@ almost-early/almost-late based on the leading/trailing half of the head.
 - **Spawn delay mode**: fixed respawn delay (default 0.5s) or random delay with min/max.
 - **Respawn at full peek**: starts the normal fixed/random respawn delay when the current bot
   reaches its configured peek width.
+- **Flash training**: enable **Breach (Flashpoint)**, **Phoenix (Curveball)**, and/or **Yoru
+  (Blindside)**. When at least one is on, **Flash frequency** sets the chance a spawn becomes a
+  flash round: an agent-colored flash pops at the angle with that agent's real windup and blind
+  duration — look away to reduce the blind — and then the enemy peeks. **Flash sound** toggles a
+  synthesized windup/pop cue.
 - **Reset stats**: button at the top of Settings.
 - **Sensitivity**: Valorant sens value + mouse DPI (shows approximate cm/360) + a fine-tune
   multiplier to match your feel. *(Browsers report mouse movement in pixels, not raw DPI
@@ -57,6 +62,7 @@ js/scene.js       renderer, FOV-103 camera, environment
 js/player.js      pointer lock + mouse look + sensitivity
 js/effects.js     shot/kill sound effects + fading bullet tracers
 js/enemy.js       peeking bot with head/body/legs hitboxes
+js/flash.js       practice flash: orb + windup + burst (Breach/Phoenix/Yoru)
 js/weapon.js      Vandal hitscan, damage, fire-rate, recoil
 js/hud.js         crosshair + stats overlay
 js/settings.js    settings panel + persistence
