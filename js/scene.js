@@ -5,6 +5,19 @@ function Scene3D(container) {
   scene.background = new THREE.Color(0x20242c);
   scene.fog = new THREE.Fog(0x20242c, 45, 95);
 
+  // Live nearsight darkness: lerp the fog/background from the base range toward a tight, near-
+  // black range so distant geometry fades to black while close range stays visible. k in 0..1.
+  const _nsBaseCol = new THREE.Color(0x20242c);
+  const _nsDarkCol = new THREE.Color(VALO.FLASH.nearsightColor);
+  const _nsLerp = (a, b, t) => a + (b - a) * t;
+  function setNearsight(k) {
+    k = Math.max(0, Math.min(1, k || 0));
+    scene.fog.near = _nsLerp(45, VALO.FLASH.nearsightNear, k);
+    scene.fog.far = _nsLerp(95, VALO.FLASH.nearsightFar, k);
+    scene.fog.color.copy(_nsBaseCol).lerp(_nsDarkCol, k);
+    scene.background.copy(_nsBaseCol).lerp(_nsDarkCol, k);
+  }
+
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -67,5 +80,5 @@ function Scene3D(container) {
   }
   window.addEventListener('resize', resize);
 
-  return { scene, camera, renderer, render: () => renderer.render(scene, camera) };
+  return { scene, camera, renderer, setNearsight, render: () => renderer.render(scene, camera) };
 }
