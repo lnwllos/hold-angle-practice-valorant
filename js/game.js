@@ -73,11 +73,11 @@
     };
   }
 
-  // Session metadata captured when recording starts.
-  function buildLogMeta() {
+  // The mutable config that affects aim/analysis. Logged in the session header at start AND
+  // as a 'config' event whenever it changes mid-recording, so the data never goes stale.
+  function logConfig() {
     const c = settings.get();
     return {
-      startedAt: new Date().toISOString(),
       trainingMode: c.trainingMode,
       distanceM: c.distance,
       fovDeg: VALO.FOV_H,
@@ -88,6 +88,10 @@
       crosshair: { color: c.chColor, length: c.chLength, gap: c.chGap, thickness: c.chThickness, dot: c.chDot },
       recoil: { on: c.recoilOn, intensity: c.recoilIntensity },
     };
+  }
+  // Session metadata captured when recording starts (the config at t=0).
+  function buildLogMeta() {
+    return Object.assign({ startedAt: new Date().toISOString() }, logConfig());
   }
 
   function init() {
@@ -222,15 +226,22 @@
   function onSettingsChange(action) {
     settings.refreshCm();
     if (hud) hud.drawCrosshair(settings.crosshair());
+    // Mark a stats reset in the log so the final summary (which counts only post-reset shots)
+    // doesn't silently contradict the full-session shot/kill events already recorded.
     if (action === 'reset-stats') {
+      if (recorder && recorder.isRecording()) recorder.logEvent('reset-stats', {});
       Object.assign(stats, makeStats());
       sessionStart = performance.now();
     }
     // Log recording toggle (use the recorder's own state as the previous value).
     if (recorder) {
+      const wasRecording = recorder.isRecording();
       const wantLog = settings.get().logRecord;
-      if (wantLog && !recorder.isRecording()) recorder.start(buildLogMeta());
-      else if (!wantLog && recorder.isRecording()) recorder.stop('toggle');
+      if (wantLog && !wasRecording) recorder.start(buildLogMeta());
+      else if (!wantLog && wasRecording) recorder.stop('toggle');
+      // A settings/mode change while already recording: log the new config so the session
+      // header (config at t=0) stays meaningful and changes are traceable in the timeline.
+      else if (wasRecording && action !== 'reset-stats') recorder.logEvent('config', logConfig());
     }
     // distance/peek/side changes take effect on the next spawn.
     applyMode();
