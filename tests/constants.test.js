@@ -15,16 +15,24 @@ test('VALO holds Valorant reference values', () => {
   assert.deepStrictEqual(VALO.AIM_FEEDBACK, { perfectHeadHalfWidth: 0.045 });
 });
 
-test('VALO.FLASH holds per-agent windup/blind/color and tuning fields', () => {
+test('VALO.FLASH holds per-agent windup/blind/color/flight and tuning fields', () => {
   const f = VALO.FLASH;
   const keys = Object.keys(f).sort();
   assert.deepStrictEqual(keys,
-    ['blindFullDeg', 'blindZeroDeg', 'breach', 'enemyPeekDelay', 'phoenix', 'rampUp', 'travel', 'yoru']);
+    ['blindFullDeg', 'blindZeroDeg', 'breach', 'enemyPeekDelay', 'phoenix', 'rampUp', 'yoru']);
   for (const k of ['breach', 'phoenix', 'yoru']) {
     assert.ok(typeof f[k].windup === 'number' && f[k].windup > 0, `${k}.windup`);
     assert.ok(typeof f[k].blind === 'number' && f[k].blind > 0, `${k}.blind`);
     assert.strictEqual(typeof f[k].color, 'number', `${k}.color`);
+    assert.ok(['wall', 'curve', 'float'].includes(f[k].flight), `${k}.flight`);
   }
+  // Per-agent flight styles
+  assert.strictEqual(f.breach.flight, 'wall');
+  assert.strictEqual(f.phoenix.flight, 'curve');
+  assert.strictEqual(f.yoru.flight, 'float');
+  // Flight tuning: fixed-duration travel for wall/curve, speed for the float
+  assert.ok(f.breach.travel > 0 && f.phoenix.travel > 0, 'fixed travel times');
+  assert.ok(f.yoru.speed > 0, 'yoru float speed');
   assert.strictEqual(f.breach.windup, 0.5);
   assert.strictEqual(f.breach.blind, 2.0);
   assert.ok(f.blindFullDeg < f.blindZeroDeg);

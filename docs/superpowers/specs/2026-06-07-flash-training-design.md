@@ -170,6 +170,22 @@ Persisted in the existing `localStorage` settings object; exposed via getters co
 
 ## Out of scope
 
-- Per-agent real flight paths (Breach through-wall, Phoenix curve, Yoru bounce).
 - On-screen dodge/hit feedback text for flashes.
 - Distance-based blind falloff (only view angle affects blind here).
+
+## Update (2026-06-07): per-agent flight paths
+
+The initial release used one generic "emerge from the corner" flight (Approach A). A follow-up
+upgraded `flash.js` to per-agent flight styles (configured by `VALO.FLASH[agent].flight`), while
+keeping the windup, blind, color, sound, and the detonation-point-in-view contract unchanged:
+
+- **Breach (`wall`)** — punches out through the cover wall at a random spot near the corner
+  (`travel` ≈ 0.12 s).
+- **Phoenix (`curve`)** — starts hidden behind the corner and curves around it into view via a
+  quadratic Bezier (`travel` ≈ 0.22 s).
+- **Yoru (`float`)** — floats out from the wall toward the player with a subtle one-bounce bob;
+  `travel = distance / speed` (`speed` ≈ 6 m/s, a tunable approximation — Valorant does not
+  publish projectile m/s).
+
+All three still detonate roughly in the player's held view so the turn-away mechanic remains
+meaningful.

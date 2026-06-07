@@ -1,22 +1,43 @@
-// A practice flash: an agent-colored orb emerges from behind the corner, flies into view,
-// winds up, then bursts. Mirrors enemy.js — owns its THREE objects and disposes them.
+// A practice flash: an agent-colored projectile reaches the angle, winds up, then bursts.
+// Each agent has its own flight style, but all share the windup -> detonate -> burst timeline
+// and expose the detonation `position` so the caller can compute the blind from the player's
+// view angle. The Valorant-accurate pieces are `windup` and the blind; the flight is cosmetic.
 //
-// Geometry reuses the enemy's corner: innerEdge = side*1.0, cover wall at z = -distance + 2.
-// Timeline from creation: travel -> windup -> detonate -> burst fade -> done. The
-// Valorant-accurate piece is `windup`; `travel` is our added flight animation. The caller
-// reads `position` at detonation to compute the blind from the player's view angle.
+// Mirrors enemy.js — owns its THREE objects and disposes them. Geometry reuses the enemy's
+// corner: innerEdge = side*1.0, cover wall at z = -distance + 2.
 //
-// cfg: { color, windup, travel, side, distance }   side = -1 (left) or +1 (right)
+// cfg: { color, windup, side, distance, flight, travel, speed }
+//   flight 'wall'  (Breach)  : emerges through the wall at a random spot near the corner; travel = duration
+//   flight 'curve' (Phoenix) : curves ~90deg around the corner into view (quadratic Bezier); travel = duration
+//   flight 'float' (Yoru)    : floats out from the wall toward the player at `speed` m/s (travel = distance/speed)
 function Flash(scene, cfg) {
   const side = cfg.side;
   const wallZ = -cfg.distance + 2;
   const innerEdge = side * 1.0;
-  const eyeY = 1.5;
 
-  const startPos = new THREE.Vector3(innerEdge + side * 0.8, eyeY, wallZ); // behind corner (occluded)
-  const detPos = new THREE.Vector3(innerEdge - side * 0.3, eyeY, wallZ);   // past corner, in view
+  // Per-agent flight geometry: startPos, optional Bezier control point, detPos, travel time.
+  let startPos, ctrlPos = null, detPos, travel;
+  if (cfg.flight === 'wall') {
+    // Breach: a random spot near the corner, inside the wall, that punches out to the player side.
+    const rx = innerEdge + side * (Math.random() * 0.8 - 0.3); // clustered around the corner
+    const ry = 1.2 + Math.random() * 0.7;                      // chest..head height
+    startPos = new THREE.Vector3(rx, ry, wallZ - 0.1);         // inside the wall
+    detPos   = new THREE.Vector3(rx, ry, wallZ + 0.3);         // emerged, player side
+    travel = cfg.travel;
+  } else if (cfg.flight === 'curve') {
+    // Phoenix: starts hidden behind the corner and curves around it into view.
+    startPos = new THREE.Vector3(innerEdge + side * 1.0, 1.6, wallZ - 0.6); // behind cover (occluded)
+    ctrlPos  = new THREE.Vector3(innerEdge + side * 0.4, 1.6, wallZ + 0.2); // bend point at the corner
+    detPos   = new THREE.Vector3(innerEdge - side * 0.4, 1.5, wallZ + 0.3); // in view, past the corner
+    travel = cfg.travel;
+  } else { // 'float' (Yoru)
+    // Yoru: appears at the corner/wall and floats toward the player; travel = distance / speed.
+    startPos = new THREE.Vector3(innerEdge - side * 0.2, 1.7, wallZ);
+    detPos   = new THREE.Vector3(innerEdge - side * 0.3, 1.4, wallZ + 1.8); // ends closer to the player
+    const dist = startPos.distanceTo(detPos);
+    travel = cfg.speed > 0 ? dist / cfg.speed : 0.3;
+  }
 
-  const travel = cfg.travel;
   const windup = cfg.windup;
   const detonateAt = travel + windup;
   const burstDur = 0.3;
@@ -41,6 +62,17 @@ function Flash(scene, cfg) {
   burst.visible = false;
   scene.add(burst);
 
+  // Quadratic Bezier (start -> ctrl -> det) for the curved flight.
+  const _v = new THREE.Vector3();
+  function curveAt(k) {
+    const a = (1 - k) * (1 - k), b = 2 * (1 - k) * k, c = k * k;
+    return _v.set(
+      a * startPos.x + b * ctrlPos.x + c * detPos.x,
+      a * startPos.y + b * ctrlPos.y + c * detPos.y,
+      a * startPos.z + b * ctrlPos.z + c * detPos.z
+    );
+  }
+
   let t = 0;
   let disposed = false;
 
@@ -49,7 +81,14 @@ function Flash(scene, cfg) {
     t += dt;
     if (t < travel) {
       const k = travel > 0 ? t / travel : 1;
-      orb.position.lerpVectors(startPos, detPos, k);
+      if (cfg.flight === 'curve') {
+        orb.position.copy(curveAt(k));
+      } else if (cfg.flight === 'float') {
+        orb.position.lerpVectors(startPos, detPos, k);
+        orb.position.y += Math.sin(k * Math.PI) * 0.25; // subtle single bounce/bob while floating
+      } else { // wall
+        orb.position.lerpVectors(startPos, detPos, k);
+      }
       light.position.copy(orb.position);
       light.intensity = 0.5 * k;
     } else if (t < detonateAt) {

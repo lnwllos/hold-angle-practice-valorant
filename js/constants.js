@@ -16,11 +16,13 @@ const VALO = {
   AIM_FEEDBACK: { perfectHeadHalfWidth: 0.045 }, // meters around head center counted as perfect
   // Flash abilities (current-patch approximations; tunable). windup = charge time before
   // the pop; blind = max blind seconds when looking straight at it; color = orb/burst tint.
+  // flight = per-agent travel style (see flash.js): 'wall' Breach charges through the wall,
+  // 'curve' Phoenix curves around the corner, 'float' Yoru floats out from the wall.
+  // travel = flight duration (s) for wall/curve; speed = float speed (m/s, Valorant approx).
   FLASH: {
-    breach:  { windup: 0.5, blind: 2.0,  color: 0xfff2b0 }, // Flashpoint — yellow-white
-    phoenix: { windup: 0.6, blind: 1.3,  color: 0xffb060 }, // Curveball  — orange (fire)
-    yoru:    { windup: 0.6, blind: 1.75, color: 0xbcd6ff }, // Blindside  — blue-white
-    travel: 0.35,         // s — orb flight from corner into view before windup (our animation)
+    breach:  { windup: 0.5, blind: 2.0,  color: 0xfff2b0, flight: 'wall',  travel: 0.12 }, // Flashpoint — yellow-white, through-wall at a random spot near the corner
+    phoenix: { windup: 0.6, blind: 1.3,  color: 0xffb060, flight: 'curve', travel: 0.22 }, // Curveball  — orange, fast curve around the corner
+    yoru:    { windup: 0.6, blind: 1.75, color: 0xbcd6ff, flight: 'float', speed: 6.0 },    // Blindside  — blue, floats out from the wall (speed ≈ m/s, exact not published)
     enemyPeekDelay: 0.15, // s — after detonation before the enemy starts peeking
     blindFullDeg: 35,     // angle(view, flash) <= this -> full blind
     blindZeroDeg: 100,    // angle(view, flash) >= this -> no blind

@@ -62,7 +62,7 @@ js/scene.js       renderer, FOV-103 camera, environment
 js/player.js      pointer lock + mouse look + sensitivity
 js/effects.js     shot/kill sound effects + fading bullet tracers
 js/enemy.js       peeking bot with head/body/legs hitboxes
-js/flash.js       practice flash: orb + windup + burst (Breach/Phoenix/Yoru)
+js/flash.js       practice flash: per-agent flight (Breach through-wall / Phoenix curve / Yoru float) + windup + burst
 js/weapon.js      Vandal hitscan, damage, fire-rate, recoil
 js/hud.js         crosshair + stats overlay
 js/settings.js    settings panel + persistence

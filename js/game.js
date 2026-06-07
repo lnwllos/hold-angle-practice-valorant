@@ -172,7 +172,9 @@
     flash = Flash(three.scene, {
       color: flashAgent.color,
       windup: flashAgent.windup,
-      travel: VALO.FLASH.travel,
+      flight: flashAgent.flight,
+      travel: flashAgent.travel,
+      speed: flashAgent.speed,
       side,
       distance: settings.get().distance,
     });
