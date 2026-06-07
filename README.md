@@ -40,6 +40,17 @@ almost-early/almost-late based on the leading/trailing half of the head.
   flash round: an agent-colored flash pops at the angle with that agent's real windup and blind
   duration — look away to reduce the blind — and then the enemy peeks. **Flash sound** toggles a
   synthesized windup/pop cue.
+- **Destructible flashes** (Hold mode): two flashes can be **shot to cancel the blind**, and
+  join the same flash-round pool / Flash frequency control:
+  - **Eye Blind Orb** — an abstract glowing orb emerges from behind the corner and hovers,
+    pulsing faster as it arms. If you don't destroy it (2 hits) before it arms, it applies a
+    *nearsight* effect (dark vignette + blur; near objects stay visible — not a white-out). Look
+    away to reduce it. A flick-and-destroy drill.
+  - **Tracking Blind Drone** — an abstract flying scanner launches from behind the wall and
+    crosses your view, aiming a scan cone at you; if it locks on it fires a strong screen blind.
+    Track it and destroy it (2 hits) before it fires, or it blinds you. A tracking drill.
+  Shooting either shows a hitmarker; destroying it before the blind = success (no blind), then
+  the held enemy peeks. These use original placeholder visuals only (no official names/assets).
 - **Reset stats**: button at the top of Settings.
 - **Sensitivity**: Valorant sens value + mouse DPI (shows approximate cm/360) + a fine-tune
   multiplier to match your feel. *(Browsers report mouse movement in pixels, not raw DPI
@@ -72,6 +83,8 @@ js/bot.js         shared bot geometry (head/body/legs hitboxes)
 js/targets.js     stationary peek-mode bots + wave (each owns its HP)
 js/peekmode.js    peek modes: wall/smoke cover + wave state machine
 js/flash.js       practice flash: per-agent flight (Breach through-wall / Phoenix curve / Yoru float) + windup + burst
+js/eyeorb.js      destructible Eye Blind Orb: emerges, hovers, arms a nearsight blind (shoot to cancel)
+js/trackdrone.js  destructible Tracking Blind Drone: flies/scans/locks-on, fires an overlay blind (shoot to cancel)
 js/weapon.js      Vandal hitscan over a target set; damage, fire-rate, recoil, wall occlusion
 js/hud.js         crosshair + stats overlay
 js/settings.js    settings panel + persistence
