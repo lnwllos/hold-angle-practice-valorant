@@ -300,15 +300,24 @@ test('smokePhase covers, then fades, then stays clear', () => {
   assert.deepStrictEqual(L.smokePhase(10, 3, 0.6), { phase: 'clear', opacity: 0 });
 });
 
-// --- destructible flash: nearsight & drone detection ---
-test('nearsightIntensity: 0 before start, ramps, holds at 1, fades to 0', () => {
-  // rampUp=0.2, duration=1.6, fadeOut=0.4
-  assert.strictEqual(L.nearsightIntensity(0, 0.2, 1.6, 0.4), 0);
-  assert.ok(Math.abs(L.nearsightIntensity(0.1, 0.2, 1.6, 0.4) - 0.5) < 1e-9); // half-way up the ramp
-  assert.strictEqual(L.nearsightIntensity(0.8, 0.2, 1.6, 0.4), 1);            // holding
-  assert.ok(Math.abs(L.nearsightIntensity(1.4, 0.2, 1.6, 0.4) - 0.5) < 1e-9); // half-way down the fade
-  assert.strictEqual(L.nearsightIntensity(1.6, 0.2, 1.6, 0.4), 0);            // done
-  assert.strictEqual(L.nearsightIntensity(2.0, 0.2, 1.6, 0.4), 0);            // past end
+// --- live nearsight easing ---
+test('approach moves toward target frame-rate-independently and clamps', () => {
+  // rise: 0 -> 1 with tau 0.06 over dt 0.03 = halfway
+  assert.ok(Math.abs(L.approach(0, 1, 0.03, 0.06, 0.2) - 0.5) < 1e-9);
+  // fall: 1 -> 0 with tau 0.2 over dt 0.1 = halfway
+  assert.ok(Math.abs(L.approach(1, 0, 0.1, 0.06, 0.2) - 0.5) < 1e-9);
+  // never overshoots the target
+  assert.strictEqual(L.approach(0.9, 1, 1.0, 0.06, 0.2), 1);
+  assert.strictEqual(L.approach(0.1, 0, 1.0, 0.06, 0.2), 0);
+  // already at target, or zero dt: unchanged
+  assert.strictEqual(L.approach(0.4, 0.4, 0.016, 0.06, 0.2), 0.4);
+  assert.strictEqual(L.approach(0.3, 1, 0, 0.06, 0.2), 0.3);
+});
+
+test('approach rises faster than it falls (shorter rise tau)', () => {
+  const up = L.approach(0, 1, 0.02, 0.06, 0.2);   // dt/0.06
+  const down = L.approach(1, 0, 0.02, 0.06, 0.2); // 1 - dt/0.2
+  assert.ok((up - 0) > (1 - down), 'rise step should exceed fall step for equal dt');
 });
 
 test('lockOnProgress clamps to [0,1] and completes at lockTime', () => {

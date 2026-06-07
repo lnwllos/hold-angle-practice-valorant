@@ -23,7 +23,9 @@ function EyeOrb(scene, cfg) {
 
   const orb = new THREE.Mesh(
     new THREE.SphereGeometry(0.13, 18, 18),
-    new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.95 })
+    // fog:false so the Reyna orb stays bright through the nearsight darkness — the player can
+    // still see/track and shoot it while everything else fades to black by distance.
+    new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.95, fog: false })
   );
   orb.position.copy(startPos);
   orb.scale.setScalar(0.05);
@@ -32,7 +34,7 @@ function EyeOrb(scene, cfg) {
   // Faint ring = "shoot me now" affordance / blind-radius hint.
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.22, 0.28, 24),
-    new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0, side: THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0, side: THREE.DoubleSide, fog: false })
   );
   ring.position.copy(restPos);
   scene.add(ring);

@@ -20,6 +20,8 @@
   let enemyPeekAt = 0;
   let windupSoundPlayed = false;
   let detonationHandled = false;
+  let nsLevel = 0;                       // eased live-nearsight level (0..1)
+  let nsTint = VALO.FLASH.eyeorb.color;  // tint of the most recent nearsight flash
   let recorder = null;
   let nextRoundId = 1;
   let activeRoundId = null;
@@ -568,6 +570,23 @@
   // projectile flashes are gated by the view angle to the flash; the drone is a direct hit
   // (full strength). Then queue the held enemy's peek.
   function handleBlind(nowSec) {
+    enemyPeekAt = nowSec + VALO.FLASH.enemyPeekDelay; // release the held enemy shortly after
+    if (settings.get().flashSound) effects.playFlashPop();
+
+    // Nearsight (Reyna orb): NOT a timed blind. The darkness is driven live each frame in
+    // driveNearsight() while the player faces the armed, still-alive orb; here we only record
+    // the tint and log that it armed.
+    if (flash.blindKind === 'nearsight') {
+      nsTint = flashAgent.color;
+      if (recorder && recorder.isRecording()) {
+        recorder.logEvent('blind', Object.assign(targetEventFields(enemy), {
+          agent: flashKey, kind: 'nearsight',
+        }));
+      }
+      return;
+    }
+
+    // Overlay flashes (Breach/Phoenix/Yoru/drone): one-shot timed white blind, angle-scaled.
     let factor = 1;
     if (flashKey !== 'trackdrone') {
       const camPos = new THREE.Vector3();
@@ -582,17 +601,31 @@
     const dur = blindDuration(flashAgent.blind, factor);
     if (recorder && recorder.isRecording()) {
       recorder.logEvent('blind', Object.assign(targetEventFields(enemy), {
-        agent: flashKey,
-        durationS: round2(dur),
-        factor: round2(factor),
+        agent: flashKey, durationS: round2(dur), factor: round2(factor),
       }));
     }
-    // Nearsight scales BOTH duration and peak intensity by factor (a stronger look-away
-    // incentive than the overlay blind, which scales duration only).
-    if (flash.blindKind === 'nearsight') hud.triggerNearsight(dur, factor, flashAgent.color);
-    else hud.triggerBlind(dur, flashAgent.color);
-    if (settings.get().flashSound) effects.playFlashPop();
-    enemyPeekAt = nowSec + VALO.FLASH.enemyPeekDelay;
+    hud.triggerBlind(dur, flashAgent.color);
+  }
+
+  // Live nearsight: full darkness while the player faces the armed, still-alive Reyna orb;
+  // eases on fast and fades over ~nsFallTau when they look away or it is destroyed/disposed.
+  // Runs every frame regardless of `flash` so the fade-out finishes after the orb is gone.
+  const _nsCam = new THREE.Vector3();
+  const _nsFwd = new THREE.Vector3();
+  const _nsTo = new THREE.Vector3();
+  function driveNearsight(dt) {
+    let target = 0;
+    if (flash && flash.blindKind === 'nearsight' && flash.shouldBlind) {
+      three.camera.getWorldPosition(_nsCam);
+      three.camera.getWorldDirection(_nsFwd);
+      _nsTo.copy(flash.position).sub(_nsCam).normalize();
+      const cos = Math.max(-1, Math.min(1, _nsFwd.dot(_nsTo)));
+      const angleDeg = (Math.acos(cos) * 180) / Math.PI;
+      if (inScanCone(angleDeg, VALO.FLASH.blindConeDeg)) target = 1;
+    }
+    nsLevel = approach(nsLevel, target, dt, VALO.FLASH.nsRiseTau, VALO.FLASH.nsFallTau);
+    three.setNearsight(nsLevel);
+    hud.setNearsight(nsLevel, nsTint);
   }
 
   function updateState(nowSec) {
@@ -671,7 +704,7 @@
     if (!autoRespawned) weapon.update(dt, nowSec);
     effects.update(dt);
     hud.updateBlind(dt);
-    hud.updateNearsight(dt);
+    driveNearsight(dt);
     hud.update(stats, (performance.now() - sessionStart) / 1000);
     hud.setPeekHint(mode === 'wallpeek' && !!peekMode && peekMode.isAwaitingCover());
   }

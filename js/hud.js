@@ -8,7 +8,6 @@ function Hud(crosshairCfg) {
   const overlay = document.getElementById('flash-overlay');
   const nearsight = document.getElementById('nearsight-overlay');
   const hitmarker = document.getElementById('hitmarker');
-  let nsElapsed = 0, nsDuration = 0, nsFactor = 0;
   let hmTimer = null;
   const peekHint = document.getElementById('peek-hint');
   let blindElapsed = 0, blindDuration = 0, blindTint = '#ffffff';
@@ -31,20 +30,14 @@ function Hud(crosshairCfg) {
     overlay.style.opacity = String(flashOverlayOpacity(blindElapsed, blindDuration, VALO.FLASH.rampUp));
     if (blindElapsed >= blindDuration) { blindDuration = 0; overlay.style.opacity = '0'; }
   }
-  function triggerNearsight(durationSec, factor, tintColor) {
-    nsDuration = Math.max(0, durationSec || 0);
-    nsElapsed = 0;
-    nsFactor = Math.max(0, Math.min(1, factor || 0));
-    if (nearsight && tintColor != null) nearsight.style.setProperty('--ns-tint', toCss(tintColor));
-  }
-  function updateNearsight(dt) {
+  // Live nearsight cue, driven each frame by game.js: a faint full-screen tint + small blur
+  // scaled by `level` (0..1). The scene's depth fog does the actual darkening; this is just hue.
+  function setNearsight(level, tint) {
     if (!nearsight) return;
-    if (nsDuration <= 0) { nearsight.style.opacity = '0'; return; }
-    nsElapsed += dt;
-    const intensity = nearsightIntensity(nsElapsed, VALO.FLASH.rampUp * 3, nsDuration, 0.4) * nsFactor;
-    nearsight.style.opacity = String(intensity);
-    nearsight.style.setProperty('--ns-blur', (intensity * VALO.FLASH.nearsight.maxBlur).toFixed(2) + 'px');
-    if (nsElapsed >= nsDuration) { nsDuration = 0; nearsight.style.opacity = '0'; }
+    const k = Math.max(0, Math.min(1, level || 0));
+    if (tint != null) nearsight.style.setProperty('--ns-tint', toCss(tint));
+    nearsight.style.opacity = String(k * 0.22);
+    nearsight.style.setProperty('--ns-blur', (k * 2).toFixed(2) + 'px');
   }
   function showHitmarker() {
     if (!hitmarker) return;
@@ -118,5 +111,5 @@ function Hud(crosshairCfg) {
 
   drawCrosshair(crosshairCfg);
   return { update, drawCrosshair, showShotFeedback, triggerBlind, updateBlind,
-           triggerNearsight, updateNearsight, showHitmarker, setPeekHint };
+           setNearsight, showHitmarker, setPeekHint };
 }

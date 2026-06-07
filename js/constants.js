@@ -47,6 +47,12 @@ const VALO = {
       blind: 1.5,             // s — strong overlay blind on a successful hit
     },
     nearsight: { maxBlur: 6, vignetteStrength: 0.85 }, // CSS nearsight tuning
+    blindConeDeg: 110,        // full cone angle for the live nearsight on/off facing test (±55°)
+    nearsightNear: 3,         // m — world stays clear up to here at full nearsight
+    nearsightFar: 8,          // m — world is fully dark by here at full nearsight
+    nearsightColor: 0x06060a, // near-black fog/background colour at full nearsight
+    nsRiseTau: 0.06,          // s — nearsight rises to full this fast when facing the orb
+    nsFallTau: 0.2,           // s — nearsight fades out this slowly when looking away/destroyed
     // Destructible flashes spawn at a random HIGH position each round (player eye level is
     // 1.6 m): from just above head height up to the top of the cover wall (8 m tall, see
     // enemy.js), so the player must aim up by a varying, often large amount.
