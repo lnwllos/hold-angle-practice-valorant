@@ -176,6 +176,8 @@ function Settings(onChange) {
     sens: () => ({ valSens: s.valSens, multiplier: s.sensMultiplier }),
     crosshair: () => ({ color: s.chColor, length: s.chLength, gap: s.chGap, thickness: s.chThickness, dot: s.chDot }),
     weaponCfg: () => ({ recoilOn: s.recoilOn, recoilIntensity: s.recoilIntensity }),
+    // Intentionally skips onChange (unlike the panel controls): the safety-cap path calls this
+    // from inside recorder.stop, and routing through onChange would re-enter recorder start/stop.
     setLogRecord: v => { s.logRecord = v; save(); build(); },
     refreshCm,
     rebuild: build,

@@ -156,7 +156,9 @@
       getStats: () => stats,
       onCap: () => {
         settings.setLogRecord(false);
-        alert('Aim log: ถึงลิมิต ~10 นาที — หยุดอัดและดาวน์โหลดไฟล์แล้ว');
+        // Defer the modal: onCap fires from inside recorder.tick (the rAF loop), and a
+        // synchronous alert() would freeze the frame. setTimeout lets the frame finish first.
+        setTimeout(() => alert('Aim log: ถึงลิมิต ~10 นาที — หยุดอัดและดาวน์โหลดไฟล์แล้ว'), 0);
       },
     });
     sessionStart = performance.now();
@@ -461,7 +463,7 @@
     let autoRespawned = false;
     if (mode === 'hold') autoRespawned = updateState(nowSec);
     else if (peekMode) peekMode.update(dt);
-    if (recorder.isRecording()) recorder.tick(dt, snapshot);
+    if (recorder && recorder.isRecording()) recorder.tick(dt, snapshot);
     if (!autoRespawned) weapon.update(dt, nowSec);
     effects.update(dt);
     hud.updateBlind(dt);
