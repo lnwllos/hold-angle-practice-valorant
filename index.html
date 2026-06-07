@@ -26,6 +26,8 @@
     #stats b { color: #4ad6c8; }
     #flash-overlay { position: absolute; inset: 0; background: #ffffff; opacity: 0;
       pointer-events: none; z-index: 20; }
+    #peek-hint { position: absolute; left: 50%; top: calc(50% + 60px); transform: translateX(-50%);
+      display: none; font-size: 15px; font-weight: 700; color: #ffd27a; text-shadow: 0 2px 4px #000; }
     #shot-feedback-stack { position: absolute; left: 50%; top: calc(50% - 84px);
       transform: translateX(-50%); display: flex; flex-direction: column-reverse; align-items: center;
       gap: 4px; min-width: 150px; pointer-events: none; }
@@ -71,6 +73,7 @@
     <canvas id="crosshair" width="60" height="60"></canvas>
     <div id="shot-feedback-stack"></div>
     <div id="stats"></div>
+    <div id="peek-hint">เคลียร์แล้ว — ถอยกลับหลังกำบัง</div>
     <div id="flash-overlay"></div>
   </div>
 

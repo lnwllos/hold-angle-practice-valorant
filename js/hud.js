@@ -6,6 +6,7 @@ function Hud(crosshairCfg) {
   const statsEl = document.getElementById('stats');
   const feedbackStack = document.getElementById('shot-feedback-stack');
   const overlay = document.getElementById('flash-overlay');
+  const peekHint = document.getElementById('peek-hint');
   let blindElapsed = 0, blindDuration = 0, blindTint = '#ffffff';
 
   function toCss(color) {
@@ -34,6 +35,10 @@ function Hud(crosshairCfg) {
     nearSlow: 'เกือบช้า',
     slow: 'ยิงช้าเกิน',
   };
+
+  function setPeekHint(show) {
+    if (peekHint) peekHint.style.display = show ? 'block' : 'none';
+  }
 
   function drawCrosshair(cfg) {
     const c = cfg || crosshairCfg;
@@ -69,5 +74,5 @@ function Hud(crosshairCfg) {
   }
 
   drawCrosshair(crosshairCfg);
-  return { update, drawCrosshair, showShotFeedback, triggerBlind, updateBlind };
+  return { update, drawCrosshair, showShotFeedback, triggerBlind, updateBlind, setPeekHint };
 }

@@ -10,7 +10,7 @@
   let state = 'waiting';   // 'waiting' | 'active' | 'flashing' | 'dead'
   let respawnAt = 0;       // wall-clock seconds when the next enemy spawns
   let visibleAt = null;    // wall-clock seconds the current enemy became visible (reaction clock)
-  let mode = 'hold';       // 'hold' | 'wallpeek' | 'smoke'  (peek wiring added in a later task)
+  let mode = null;         // set by applyMode(); 'hold' | 'wallpeek' | 'smoke'
   let peekMode = null;     // PeekMode instance when mode !== 'hold'
 
   // Flash-round lifecycle (a flash pops, then the held enemy peeks)
@@ -66,7 +66,7 @@
     });
     hud = Hud(settings.crosshair());
     sessionStart = performance.now();
-    respawnAt = performance.now() / 1000;  // spawn immediately on start
+    applyMode();
     setupPointerLock();
     requestAnimationFrame(loop);
   }
@@ -131,6 +131,43 @@
       sessionStart = performance.now();
     }
     // distance/peek/side changes take effect on the next spawn.
+    applyMode();
+  }
+
+  // Build or rebuild the active training mode. Tears down the previous mode's objects.
+  function applyMode() {
+    const want = settings.get().trainingMode || 'hold';
+    if (want === mode && (mode === 'hold' || peekMode)) return; // unchanged
+    mode = want;
+
+    if (enemy) { enemy.dispose(); enemy = null; }
+    if (flash) { flash.dispose(); flash = null; }
+    if (peekMode) { peekMode.dispose(); peekMode = null; }
+    state = 'waiting';
+    visibleAt = null;
+
+    if (mode === 'hold') {
+      player.setMovementEnabled(false);
+      player.setColliders([]);
+      player.setBounds(null);
+      player.resetPosition();
+      respawnAt = performance.now() / 1000; // spawn the next enemy immediately
+    } else {
+      player.setMovementEnabled(true);
+      player.resetPosition();
+      peekMode = PeekMode(three.scene, {
+        variant: mode === 'wallpeek' ? 'wall' : 'smoke',
+        getConfig: () => {
+          const c = settings.get();
+          return { distance: c.distance, countMode: c.enemyCountMode, count: c.enemyCount, countMax: c.enemyCountMax };
+        },
+        getRespawnDelay: () => resolveRespawnDelay(),
+        getPlayerPos: () => ({ x: player.position.x, z: player.position.z }),
+        rng: Math.random,
+      });
+      player.setColliders(peekMode.colliders());
+      player.setBounds(peekMode.playBounds());
+    }
   }
 
   // --- spawn helpers ---
@@ -270,11 +307,14 @@
     lastDt = dt;
     const nowSec = performance.now() / 1000;
     player.update(dt);
-    const autoRespawned = updateState(nowSec);
+    let autoRespawned = false;
+    if (mode === 'hold') autoRespawned = updateState(nowSec);
+    else if (peekMode) peekMode.update(dt);
     if (!autoRespawned) weapon.update(dt, nowSec);
     effects.update(dt);
     hud.updateBlind(dt);
     hud.update(stats, (performance.now() - sessionStart) / 1000);
+    hud.setPeekHint(mode === 'wallpeek' && !!peekMode && peekMode.isAwaitingCover());
   }
 
   window.addEventListener('DOMContentLoaded', init);
