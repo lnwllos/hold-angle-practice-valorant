@@ -24,6 +24,12 @@ almost-early/almost-late based on the leading/trailing half of the head.
 
 ## Settings (Esc)
 - **Distance** player ↔ enemy: Near 8m / Medium 18m / Far 35m.
+- **Training mode**: *Hold angle* (react to an enemy peek — the original drill) · *Wall peek*
+  (you hide behind a wall and **WASD** out to clear 1–5 stationary bots, then retreat behind
+  cover to spawn the next wave) · *Smoke* (you stand behind a smoke that fully blocks for ~3 s
+  then fades, revealing 1–5 bots; clear them and the next wave's smoke re-covers).
+- **Enemy count** (peek modes): fixed, or random 1–5. Bots stand at random positions in front
+  (random left/right and depth, never beyond the set distance) and do not shoot back.
 - **Peek mode**: Fixed width, or Random where **wider peeks are rarer**.
 - **Peek side**: Left / Right / Random.
 - **Spawn delay mode**: fixed respawn delay (default 0.5s) or random delay with min/max.
@@ -59,11 +65,14 @@ three.min.js      Three.js r128 (vendored)
 js/constants.js   Valorant reference values + FOV helper   (tested)
 js/logic.js       pure game logic                          (tested)
 js/scene.js       renderer, FOV-103 camera, environment
-js/player.js      pointer lock + mouse look + sensitivity
+js/player.js      pointer lock + mouse look + sensitivity + gated WASD movement
 js/effects.js     shot/kill sound effects + fading bullet tracers
 js/enemy.js       peeking bot with head/body/legs hitboxes
+js/bot.js         shared bot geometry (head/body/legs hitboxes)
+js/targets.js     stationary peek-mode bots + wave (each owns its HP)
+js/peekmode.js    peek modes: wall/smoke cover + wave state machine
 js/flash.js       practice flash: per-agent flight (Breach through-wall / Phoenix curve / Yoru float) + windup + burst
-js/weapon.js      Vandal hitscan, damage, fire-rate, recoil
+js/weapon.js      Vandal hitscan over a target set; damage, fire-rate, recoil, wall occlusion
 js/hud.js         crosshair + stats overlay
 js/settings.js    settings panel + persistence
 js/game.js        composition root + spawn/hold/respawn state machine
