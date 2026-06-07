@@ -66,6 +66,7 @@ function Weapon(deps) {
     deps.on.shot({
       hitZone,
       isHead: hitZone === 'head',
+      hitFlash: !!(bot && bot.isFlash),
       aimX,
       botX: primary ? primary.x : NaN,
       movementDir: primary ? primary.movementDir : 0,
