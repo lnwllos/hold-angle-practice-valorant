@@ -325,3 +325,11 @@ test('ticksToEmit emits floor((acc+dt)/period) samples and keeps the remainder',
   assert.strictEqual(r.count, 0);
   assert.strictEqual(r.remainder, 0.02);
 });
+
+test('angleBetweenDeg returns the angle in degrees between [x,y,z] vectors', () => {
+  assert.ok(Math.abs(L.angleBetweenDeg([1, 0, 0], [1, 0, 0]) - 0) < 1e-6);
+  assert.ok(Math.abs(L.angleBetweenDeg([1, 0, 0], [0, 1, 0]) - 90) < 1e-6);
+  assert.ok(Math.abs(L.angleBetweenDeg([1, 0, 0], [-1, 0, 0]) - 180) < 1e-6);
+  assert.ok(Math.abs(L.angleBetweenDeg([1, 0, 0], [1, 1, 0]) - 45) < 1e-6);
+  assert.strictEqual(L.angleBetweenDeg([0, 0, 0], [1, 0, 0]), 0);
+});

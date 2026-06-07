@@ -227,6 +227,16 @@ function ticksToEmit(accSec, dtSec, periodSec) {
   return { count, remainder: acc };
 }
 
+// Angle in degrees between two 3D vectors given as [x,y,z] arrays. 0 if either is zero-length.
+function angleBetweenDeg(a, b) {
+  const dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const ma = Math.hypot(a[0], a[1], a[2]);
+  const mb = Math.hypot(b[0], b[1], b[2]);
+  if (ma === 0 || mb === 0) return 0;
+  const c = Math.max(-1, Math.min(1, dot / (ma * mb)));
+  return (Math.acos(c) * 180) / Math.PI;
+}
+
 // --- Session stats ---
 function makeStats() {
   return { shots: 0, hits: 0, headshots: 0, kills: 0, reactionTotalMs: 0 };
@@ -247,6 +257,6 @@ if (typeof module !== 'undefined' && module.exports) {
     classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover, smokePhase,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
-    ticksToEmit,
+    ticksToEmit, angleBetweenDeg,
   };
 }
