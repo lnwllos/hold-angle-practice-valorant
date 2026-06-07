@@ -18,6 +18,10 @@ function Settings(onChange) {
     flashYoru: false,
     flashChance: 0.3,   // fraction of spawns that become flash rounds (needs an agent enabled)
     flashSound: true,
+    trainingMode: 'hold',     // 'hold' | 'wallpeek' | 'smoke'
+    enemyCountMode: 'fixed',  // 'fixed' | 'random'
+    enemyCount: 3,            // fixed wave size (1..5)
+    enemyCountMax: 5,         // random upper bound (1..5)
     valSens: 0.4,
     dpi: 800,
     sensMultiplier: 1.0,
@@ -82,19 +86,35 @@ function Settings(onChange) {
     actions.appendChild(resetTop);
     body.appendChild(actions);
 
+    row('Training mode', select(
+      [['hold', 'Hold angle (รับ peek)'], ['wallpeek', 'Wall peek (เรา peek)'], ['smoke', 'Smoke (ยืนในควัน)']],
+      s.trainingMode, v => { s.trainingMode = v; build(); }));
+
     row('Distance (player ↔ enemy)', select(
       [[VALO.DISTANCE.near, 'Near (8m)'], [VALO.DISTANCE.medium, 'Medium (18m)'], [VALO.DISTANCE.far, 'Far (35m)']],
       s.distance, v => s.distance = parseFloat(v)));
-    row('Peek mode', select([['fixed', 'Fixed width'], ['random', 'Random (wider = rarer)']],
-      s.peekMode, v => { s.peekMode = v; build(); }));
-    row('Peek width / max (m)', range(VALO.PEEK.min, VALO.PEEK.max, 0.1,
-      s.peekMode === 'fixed' ? s.peekWidth : s.peekMaxWidth, v => v.toFixed(1) + 'm',
-      v => { if (s.peekMode === 'fixed') s.peekWidth = v; else s.peekMaxWidth = v; }));
-    row('Peek side', select([['left', 'Left'], ['right', 'Right'], ['random', 'Random']],
-      s.side, v => s.side = v));
+
+    if (s.trainingMode === 'hold') {
+      row('Peek mode', select([['fixed', 'Fixed width'], ['random', 'Random (wider = rarer)']],
+        s.peekMode, v => { s.peekMode = v; build(); }));
+      row('Peek width / max (m)', range(VALO.PEEK.min, VALO.PEEK.max, 0.1,
+        s.peekMode === 'fixed' ? s.peekWidth : s.peekMaxWidth, v => v.toFixed(1) + 'm',
+        v => { if (s.peekMode === 'fixed') s.peekWidth = v; else s.peekMaxWidth = v; }));
+      row('Peek side', select([['left', 'Left'], ['right', 'Right'], ['random', 'Random']],
+        s.side, v => s.side = v));
+      row('Respawn at full peek', checkbox(s.respawnOnFullPeek, v => s.respawnOnFullPeek = v));
+    } else {
+      row('Enemy count mode', select([['fixed', 'Fixed'], ['random', 'Random (1–max)']],
+        s.enemyCountMode, v => { s.enemyCountMode = v; build(); }));
+      if (s.enemyCountMode === 'fixed') {
+        row('Enemy count', range(1, 5, 1, s.enemyCount, v => String(v), v => s.enemyCount = v));
+      } else {
+        row('Enemy max', range(1, 5, 1, s.enemyCountMax, v => String(v), v => s.enemyCountMax = v));
+      }
+    }
+
     row('Spawn delay mode', select([['fixed', 'Fixed delay'], ['random', 'Random delay']],
       s.spawnDelayMode, v => { s.spawnDelayMode = v; build(); }));
-    row('Respawn at full peek', checkbox(s.respawnOnFullPeek, v => s.respawnOnFullPeek = v));
     if (s.spawnDelayMode === 'fixed') {
       row('Respawn delay', range(0, 2, 0.1, s.respawnDelay, v => v.toFixed(1) + 's', v => s.respawnDelay = v));
     } else {
@@ -102,12 +122,14 @@ function Settings(onChange) {
       row('Random delay max', range(0, 3, 0.1, s.respawnDelayMax, v => v.toFixed(1) + 's', v => s.respawnDelayMax = v));
     }
 
-    row('Flash: Breach (Flashpoint)', checkbox(s.flashBreach, v => s.flashBreach = v));
-    row('Flash: Phoenix (Curveball)', checkbox(s.flashPhoenix, v => s.flashPhoenix = v));
-    row('Flash: Yoru (Blindside)', checkbox(s.flashYoru, v => s.flashYoru = v));
-    row('Flash frequency', range(0, 1, 0.05, s.flashChance, v => Math.round(v * 100) + '%',
-      v => s.flashChance = v), 'Chance a spawn is a flash round (needs an agent enabled).');
-    row('Flash sound', checkbox(s.flashSound, v => s.flashSound = v));
+    if (s.trainingMode === 'hold') {
+      row('Flash: Breach (Flashpoint)', checkbox(s.flashBreach, v => s.flashBreach = v));
+      row('Flash: Phoenix (Curveball)', checkbox(s.flashPhoenix, v => s.flashPhoenix = v));
+      row('Flash: Yoru (Blindside)', checkbox(s.flashYoru, v => s.flashYoru = v));
+      row('Flash frequency', range(0, 1, 0.05, s.flashChance, v => Math.round(v * 100) + '%',
+        v => s.flashChance = v), 'Chance a spawn is a flash round (needs an agent enabled).');
+      row('Flash sound', checkbox(s.flashSound, v => s.flashSound = v));
+    }
 
     row('Valorant sensitivity', range(0.05, 2.0, 0.01, s.valSens, v => v.toFixed(2), v => s.valSens = v),
       'Uses Valorant yaw constant (sens × 0.07°/count).');
