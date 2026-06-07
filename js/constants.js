@@ -47,6 +47,9 @@ const VALO = {
       blind: 1.5,             // s — strong overlay blind on a successful hit
     },
     nearsight: { maxBlur: 6, vignetteStrength: 0.85 }, // CSS nearsight tuning
+    // Destructible flashes spawn at a random HIGH position each round (player eye level is
+    // 1.6 m): from just above head height to clearly overhead, so the player must aim up.
+    highSpawnY: { min: 2.0, max: 2.8 },
     enemyPeekDelay: 0.15, // s — after detonation before the enemy starts peeking
     blindFullDeg: 35,     // angle(view, flash) <= this -> full blind
     blindZeroDeg: 100,    // angle(view, flash) >= this -> no blind

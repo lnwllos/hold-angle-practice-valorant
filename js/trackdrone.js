@@ -15,8 +15,10 @@ function TrackDrone(scene, cfg) {
   const innerEdge = side * 1.0;
 
   // Launch from behind the corner, fly laterally inward across the view (player must track it).
-  const startPos = new THREE.Vector3(innerEdge + side * 0.6, 1.70, wallZ + 0.2);
-  const endPos   = new THREE.Vector3(innerEdge - side * 2.2, 1.70, wallZ + 1.2);
+  // spawnY (optional) raises the flight path above eye level (1.6 m) so the player must aim up.
+  const baseY = cfg.spawnY != null ? cfg.spawnY : 1.70;
+  const startPos = new THREE.Vector3(innerEdge + side * 0.6, baseY, wallZ + 0.2);
+  const endPos   = new THREE.Vector3(innerEdge - side * 2.2, baseY, wallZ + 1.2);
   const flightFwd = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
 
   const body = new THREE.Mesh(

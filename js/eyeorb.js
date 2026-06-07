@@ -12,8 +12,10 @@ function EyeOrb(scene, cfg) {
   const innerEdge = side * 1.0;
 
   // Emerge from inside the wall, float toward the player, stop and hover.
-  const startPos = new THREE.Vector3(innerEdge - side * 0.2, 1.60, wallZ - 0.1);
-  const restPos  = new THREE.Vector3(innerEdge - side * 0.3, 1.55, wallZ + 1.5);
+  // spawnY (optional) raises the orb above eye level (1.6 m) so the player must aim up.
+  const baseY = cfg.spawnY != null ? cfg.spawnY : 1.60;
+  const startPos = new THREE.Vector3(innerEdge - side * 0.2, baseY, wallZ - 0.1);
+  const restPos  = new THREE.Vector3(innerEdge - side * 0.3, baseY - 0.05, wallZ + 1.5);
   const travel = cfg.travel;
   const windup = cfg.windup;
   const armAt = travel + windup;       // full effect arms here (if not destroyed)

@@ -230,17 +230,20 @@
   function makeFlash(key, side) {
     const a = VALO.FLASH[key];
     const distance = settings.get().distance;
+    // Destructible flashes spawn at a random high position so the player must aim up.
+    const H = VALO.FLASH.highSpawnY;
+    const spawnY = H.min + Math.random() * (H.max - H.min);
     if (key === 'eyeorb') {
       return EyeOrb(three.scene, {
         color: a.color, travel: a.travel, windup: a.windup,
-        destroyHits: a.destroyHits, side, distance,
+        destroyHits: a.destroyHits, side, distance, spawnY,
       });
     }
     if (key === 'trackdrone') {
       return TrackDrone(three.scene, {
         color: a.color, flightTime: a.flightTime, scanStartDelay: a.scanStartDelay,
         lockOnTime: a.lockOnTime, scanRange: a.scanRange, scanConeDeg: a.scanConeDeg,
-        destroyHits: a.destroyHits, side, distance,
+        destroyHits: a.destroyHits, side, distance, spawnY,
         getPlayerPos: () => ({ x: player.position.x, z: player.position.z }),
       });
     }
