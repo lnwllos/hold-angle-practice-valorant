@@ -53,20 +53,20 @@ function Hud(crosshairCfg) {
     hmTimer = setTimeout(() => { hitmarker.style.opacity = '0'; }, 90);
   }
   const feedbackText = {
-    fast: 'ยิงเร็วเกิน',
+    fast: 'ยิงเร็วไป',
     nearFast: 'เกือบเร็ว',
     perfect: 'ยิงเป๊ะ',
     good: 'จังหวะดี',
     nearSlow: 'เกือบช้า',
-    slow: 'ยิงช้าเกิน',
-    missLeft: 'LEFT',
-    missRight: 'RIGHT',
-    missHigh: 'HIGH',
-    missLow: 'LOW',
-    noTarget: 'NO TARGET',
-    preVisible: 'WAIT',
-    wallBlocked: 'WALL',
-    oneTapFail: 'ONE TAP FAIL',
+    slow: 'ยิงช้าไป',
+    missLeft: 'ซ้าย',
+    missRight: 'ขวา',
+    missHigh: 'สูง',
+    missLow: 'ต่ำ',
+    noTarget: 'ไม่มีเป้า',
+    preVisible: 'รอก่อน',
+    wallBlocked: 'ติดกำแพง',
+    oneTapFail: 'First bullet พลาด',
   };
 
   function setPeekHint(show) {
@@ -90,16 +90,16 @@ function Hud(crosshairCfg) {
   function update(stats, sessionSec) {
     const avgReaction = (stats.reactionSamples || 0) ? `${statAvgReaction(stats).toFixed(0)}<small>ms</small>` : '-';
     statsEl.innerHTML =
-      '<div class="st-hdr">Live</div>' +
-      row('Kills', stats.kills, 'accent') +
-      row('Valid Acc', (statValidAccuracy(stats) * 100).toFixed(0) + '<small>%</small>', 'accent') +
-      row('First', (statFirstBulletPct(stats) * 100).toFixed(0) + '<small>%</small>') +
-      row('Raw Acc', (statAccuracy(stats) * 100).toFixed(0) + '<small>%</small>') +
+      '<div class="st-hdr">สด</div>' +
+      row('Kill', stats.kills, 'accent') +
+      row('Acc ถูกจังหวะ', (statValidAccuracy(stats) * 100).toFixed(0) + '<small>%</small>', 'accent') +
+      row('First bullet', (statFirstBulletPct(stats) * 100).toFixed(0) + '<small>%</small>') +
+      row('Acc รวม', (statAccuracy(stats) * 100).toFixed(0) + '<small>%</small>') +
       row('HS', (statHeadshotPct(stats) * 100).toFixed(0) + '<small>%</small>') +
       row('No target', stats.noTargetShots || 0) +
-      row('Early', stats.preVisibleShots || 0) +
+      row('ยิงก่อนเห็น', stats.preVisibleShots || 0) +
       row('React', avgReaction) +
-      row('Time', sessionSec.toFixed(0) + '<small>s</small>');
+      row('เวลา', sessionSec.toFixed(0) + '<small>s</small>');
   }
 
   function row(k, v, cls) {

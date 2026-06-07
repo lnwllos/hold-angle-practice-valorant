@@ -65,14 +65,16 @@ function Recorder(deps) {
     recording = false;
     const stats = diffStats(snapshotStats(), statsBaseline || makeStats());
     const durationMs = relT();
-    const summary = buildSummary(stats, stoppedBy || 'toggle');
+    const stopReason = stoppedBy || 'toggle';
+    events.push({ t: durationMs, type: 'stop', stoppedBy: stopReason });
+    const summary = buildSummary(stats, stopReason);
     const obj = {
       schemaVersion: 2,
       logProfile: `analysis-${TICK_HZ}hz`,
-      _readme: 'Aim training log. ticks = fixed-rate samples (t in ms from start). ' +
-        'ticks keep lightweight aim/player state; shot events carry full target/timing context. ' +
-        'angles in degrees, positions [x,y,z] in meters. aimErrorDeg is absolute crosshair-to-head angle; ' +
-        'yawErrorDeg/pitchErrorDeg are signed current-aim minus target-head angles.',
+      _readme: 'Aim training log. ticks = sample แบบ fixed-rate (t เป็น ms จากตอนเริ่มอัด). ' +
+        'ticks เก็บสถานะ aim/player แบบเบา ๆ; shot event เก็บ context ของ target/timing แบบเต็ม. ' +
+        'มุมเป็น degrees, ตำแหน่ง [x,y,z] เป็น meters. aimErrorDeg คือมุม crosshair-to-head แบบ absolute; ' +
+        'yawErrorDeg/pitchErrorDeg คือ current aim ลบ target head angle แบบ signed.',
       session: Object.assign({ tickRateHz: TICK_HZ, durationMs }, meta),
       summary,
       segments: buildEventSegments(events, durationMs, meta),
@@ -223,5 +225,5 @@ function defaultDownload(name, text) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }

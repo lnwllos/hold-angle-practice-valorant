@@ -1,109 +1,72 @@
 # Valorant Hold-Angle Trainer
 
-A browser FPS for practicing **holding an angle**: stand still, pre-aim a corner, and react to
-an enemy swinging out from cover. Damage and physics are referenced to Valorant. No install,
-no build step.
+FPS บน browser สำหรับซ้อม **Hold angle**: ยืนนิ่ง pre-aim มุม แล้ว react ตอนศัตรู swing ออกจาก cover. Damage และ physics อ้างอิงจาก Valorant. ไม่ต้อง install และไม่มี build step.
 
-## How to run
-- **Double-click `index.html`** — works offline (Three.js is vendored locally), **or**
-- run **`start.bat`** to serve it at http://localhost:8000.
+## วิธีรัน
+- **ดับเบิลคลิก `index.html`** - เล่น offline ได้ เพราะ vendored Three.js อยู่ในโปรเจกต์แล้ว
+- หรือรัน **`start.bat`** เพื่อเปิดที่ http://localhost:8000
 
-Click the screen to play (mouse is captured — pointer lock). Press **Esc** to open Settings or
-pause. Left-click to shoot (unlimited ammo, no reload).
-Every shot plays a Vandal sound, draws a 1-second fading tracer, and gives timing feedback:
-too early if the shot passes ahead of the bot, too slow if it passes behind the bot, and
-perfect if the shot lands near the head center. Headshots outside the center zone show
-almost-early/almost-late based on the leading/trailing half of the head.
+คลิกหน้าจอเพื่อเล่น ระบบจะจับเมาส์ด้วย pointer lock. กด **Esc** เพื่อเปิด Settings หรือ pause. คลิกซ้ายเพื่อยิง มีกระสุนไม่จำกัดและไม่ต้อง reload.
 
-## What it models from Valorant
-- Enemy peek/swing speed **5.4 m/s** (Vandal/rifle run speed).
-- **Vandal**: head **160** → one-shot headshot at any range (no falloff) · body **40** (4 shots
-  to kill) · legs **33**. Enemy has **150 EHP** (100 HP + 50 armor).
-- Fire rate **9.75 rounds/sec** · horizontal **FOV 103°**.
-- The enemy hides behind a corner and only becomes visible once it strafes past the edge.
+ทุกนัดจะเล่นเสียง Vandal, วาด tracer ที่ค่อย ๆ จางใน 1 วินาที และให้ timing feedback: ยิงเร็วไปถ้ากระสุนผ่านหน้าก่อน bot, ยิงช้าไปถ้าผ่านหลัง bot, และยิงเป๊ะถ้าโดนใกล้กลางหัว. Headshot ที่อยู่นอกจุดกลางจะแสดงว่าเกือบเร็วหรือเกือบช้าตามฝั่งของหัว.
+
+## สิ่งที่จำลองจาก Valorant
+- ความเร็ว peek/swing ของศัตรู **5.4 m/s** เท่ากับความเร็ววิ่งตอนถือ Vandal/rifle
+- **Vandal**: หัว **160** - headshot นัดเดียวตายทุกระยะ ไม่มี falloff; body **40** ต้อง 4 นัด; legs **33**. ศัตรูมี **150 EHP** (100 HP + 50 armor)
+- Fire rate **9.75 rounds/sec** และ horizontal **FOV 103°**
+- ศัตรูซ่อนหลังมุม และจะ visible เมื่อ strafe พ้น edge เท่านั้น
 
 ## Settings (Esc)
-- **Distance** player ↔ enemy: Near 8m / Medium 18m / Far 35m.
-- **Training mode**: *Hold angle* (react to an enemy peek — the original drill) · *Wall peek*
-  (you hide behind a wall and **WASD** out to clear 1–5 stationary bots, then retreat behind
-  cover to spawn the next wave) · *Smoke* (you stand behind a smoke that fully blocks for ~3 s
-  then fades, revealing 1–5 bots; clear them and the next wave's smoke re-covers).
-- **Enemy count** (peek modes): fixed, or random 1–5. Bots stand at random positions in front
-  (random left/right and depth, never beyond the set distance) and do not shoot back.
-- **Peek mode**: Fixed width, or Random where **wider peeks are rarer**.
-- **Peek side**: Left / Right / Random.
-- **Spawn delay mode**: fixed respawn delay (default 0.5s) or random delay with min/max.
-- **Respawn at full peek**: starts the normal fixed/random respawn delay when the current bot
-  reaches its configured peek width.
-- **First bullet drill** (Hold mode): allows one valid enemy shot per peek. A miss or body shot
-  ends the round so you can isolate first-bullet discipline.
-- **Miss direction feedback** (Hold mode): shows LEFT / RIGHT / HIGH / LOW after valid misses,
-  plus WAIT / NO TARGET for trigger-discipline mistakes.
-- **Flash training**: enable **Breach (Flashpoint)**, **Phoenix (Curveball)**, and/or **Yoru
-  (Blindside)**. When at least one is on, **Flash frequency** sets the chance a spawn becomes a
-  flash round: an agent-colored flash pops at the angle with that agent's real windup and blind
-  duration — look away to reduce the blind — and then the enemy peeks. **Flash sound** toggles a
-  synthesized windup/pop cue.
-- **Destructible flashes** (Hold mode): two flashes can be **shot to cancel the blind**, and
-  join the same flash-round pool / Flash frequency control:
-  - **Eye Blind Orb** — an abstract glowing orb emerges from behind the corner and hovers,
-    pulsing faster as it arms. If you don't destroy it (2 hits) before it arms, it applies a
-    *nearsight* effect (dark vignette + blur; near objects stay visible — not a white-out). Look
-    away to reduce it. A flick-and-destroy drill.
-  - **Tracking Blind Drone** — an abstract flying scanner launches from behind the wall and
-    crosses your view, aiming a scan cone at you; if it locks on it fires a strong screen blind.
-    Track it and destroy it (2 hits) before it fires, or it blinds you. A tracking drill.
-  Shooting either shows a hitmarker; destroying it before the blind = success (no blind), then
-  the held enemy peeks. These use original placeholder visuals only (no official names/assets).
-- **Reset stats**: button at the top of Settings.
-- **Sensitivity**: Valorant sens value + mouse DPI (shows approximate cm/360) + a fine-tune
-  multiplier to match your feel. *(Browsers report mouse movement in pixels, not raw DPI
-  counts, so cm/360 is approximate — use the fine-tune slider.)*
-- **Vandal recoil**: on/off + intensity (off by default; first shot is always accurate).
-- **Crosshair**: color, length, gap, thickness, center dot. All settings persist (localStorage).
-- **Log recording**: when on, records lightweight aim/player ticks plus rich shot/context events
-  (`spawn`/`visible`/`wave-spawn`/`target-spawn`/`shot`/`kill`/`flash`/`blind`). Turn it **off** to download one
-  `holdangle-log-*.json` per session — a structured file meant for AI-assisted analysis of
-  aim, flicks, recoil, and sensitivity. Schema v2 uses a 64 Hz analysis profile, gives each
-  round/wave/target an ID, and stores full shot context: signed yaw/pitch error, target
-  head/distance, time since visible, time since last shot, first-bullet flag, burst index,
-  recoil offset, player speed, wall-block status, valid-shot metrics, and a readable shot reason.
-  The final summary now counts from when recording starts, not from earlier unrecorded play. The
-  session header captures your config at the start; if you change settings/mode or reset stats
-  mid-recording, that is logged as a `config`/`reset-stats` event and split into segment
-  summaries. Auto-stops and downloads at a ~10-minute safety cap.
+- **ระยะ** player ถึง enemy: ใกล้ 8m / กลาง 18m / ไกล 35m
+- **โหมดฝึก**: *Hold angle* สำหรับ react ตอน enemy peek; *Wall peek* สำหรับซ่อนหลังกำแพงแล้วใช้ **WASD** ออกไป clear bot 1-5 ตัว จากนั้นถอยกลับ cover เพื่อ spawn wave ถัดไป; *Smoke* สำหรับยืนหลัง smoke ที่บังเต็มประมาณ 3s แล้วค่อย fade เพื่อ reveal bot 1-5 ตัว
+- **จำนวนเป้า** ใน peek mode: คงที่ หรือสุ่ม 1-5 ตัว. Bot ยืนสุ่มตำแหน่งด้านหน้า สุ่มซ้าย/ขวาและความลึก แต่ไม่เกินระยะที่ตั้งไว้ และไม่ยิงสวน
+- **โหมด Peek**: ระยะคงที่ หรือสุ่มโดยที่ **peek กว้างจะออกยากกว่า**
+- **ฝั่ง Peek**: ซ้าย / ขวา / สุ่ม
+- **โหมดดีเลย์ Spawn**: respawn delay คงที่ (default 0.5s) หรือสุ่มด้วย min/max
+- **Respawn ตอน full peek**: เริ่ม delay รอบถัดไปเมื่อ bot ปัจจุบัน peek จนสุดระยะที่ตั้งไว้
+- **First bullet drill** ใน Hold mode: อนุญาตหนึ่ง valid shot ต่อ peek. ถ้า miss หรือโดน body รอบจะจบทันที เพื่อแยกซ้อมวินัยนัดแรก
+- **Feedback ทิศทาง miss** ใน Hold mode: แสดง ซ้าย / ขวา / สูง / ต่ำ หลัง valid miss และแสดง รอก่อน / ไม่มีเป้า สำหรับ trigger discipline
+- **ฝึก Flash**: เปิด **Breach (Flashpoint)**, **Phoenix (Curveball)**, **Yoru (Blindside)** และ flash แบบยิงทำลายได้. เมื่อเปิดอย่างน้อยหนึ่งตัว **ความถี่ Flash** จะกำหนดโอกาสที่ spawn ถัดไปเป็น flash round: flash จะออกจาก angle ด้วย windup และ blind duration ตาม agent; หันหนีเพื่อลด blind แล้ว enemy จะ peek ต่อ. **เสียง Flash** เปิด/ปิด cue windup/pop
+- **Flash ที่ยิงทำลายได้** ใน Hold mode: มี 2 แบบที่ยิงเพื่อ cancel blind ได้ และใช้ pool เดียวกับ Flash frequency
+- **Eye Blind Orb**: orb เรืองแสงออกจากมุมและลอยค้าง ถ้าไม่ทำลายด้วย 2 hits ก่อน arm จะทำ nearsight (vignette มืด + blur; ของใกล้ยังเห็น ไม่ใช่ white-out). เป็น drill flick-and-destroy
+- **Tracking Blind Drone**: scanner บินออกจากหลังกำแพงและ aim scan cone มาที่ player; ถ้า lock-on สำเร็จจะยิง blind แรง. ต้อง track และทำลายด้วย 2 hits ก่อนยิง blind
+- ยิง flash แบบทำลายได้แล้วจะมี hitmarker; ถ้าทำลายก่อน blind = สำเร็จ ไม่มี blind แล้ว enemy จะ peek. Visual เป็น placeholder ของโปรเจกต์ ไม่ใช่ชื่อหรือ asset official
+- **รีเซ็ตสถิติ**: ปุ่มด้านบนของ Settings
+- **Sensitivity**: ค่า Valorant sens + Mouse DPI พร้อม cm/360 โดยประมาณ และ fine-tune multiplier เพื่อจูนให้ตรงมือ. Browser รายงาน mouse movement เป็น pixel ไม่ใช่ raw DPI count ดังนั้น cm/360 เป็นค่าประมาณ
+- **Recoil Vandal**: เปิด/ปิด + intensity. นัดแรกแม่นเสมอ
+- **Crosshair**: สี, ความยาว, gap, ความหนา, center dot. Settings ทั้งหมดบันทึกใน localStorage
+- **อัด Log**: เมื่อเปิด จะบันทึก tick aim/player แบบเบา ๆ และ event รายละเอียด เช่น `spawn`/`visible`/`wave-spawn`/`target-spawn`/`shot`/`kill`/`flash`/`blind`/`round-end`/`stop`. ปิดเพื่อ download ไฟล์ `holdangle-log-*.json` หนึ่งไฟล์ต่อ session สำหรับ AI-assisted analysis ด้าน aim, flick, recoil และ sensitivity
 
-The HUD tracks **kills, valid-shot accuracy, first-bullet accuracy, raw accuracy, headshot %,
-no-target shots, early shots, average reaction time**, and session time (reaction time = from
-when the enemy clears the corner to your killing shot).
+Log schema v2 ใช้ profile 64 Hz, ใส่ ID ให้ round/wave/target และเก็บ shot context: yaw/pitch error แบบ signed, target head/distance, time since visible, time since last shot, first-bullet flag, burst index, recoil offset, player speed, wall-block status, valid-shot metrics และ shot reason ที่อ่านง่าย. Summary สุดท้ายจะนับจากตอนเริ่มอัดจริง ไม่รวมการเล่นก่อนเริ่มอัด. ถ้าเปลี่ยน Settings/mode หรือ reset stats ระหว่างอัด จะมี `config`/`reset-stats` event และแยก segment summary. ถ้า bot จบรอบเพราะ full peek หรือ First bullet drill จะมี `round-end`; ตอนหยุดอัดจะมี `stop` เพื่อไม่ให้ log ดูเหมือนค้างกลาง event. ระบบ auto-stop และ download เมื่อถึง safety cap ประมาณ 10 นาที.
+
+HUD แสดง **Kill, valid-shot accuracy, first-bullet accuracy, raw accuracy, headshot %, no-target shots, early shots, average reaction time** และเวลา session. Reaction time คือเวลาจาก enemy clear มุมจนถึง killing shot.
 
 ## Develop / test
-Pure game logic (damage, peek sampling, sensitivity, fire-rate, recoil, stats, FOV) is
-unit-tested with Node's built-in runner:
+Pure game logic เช่น damage, peek sampling, sensitivity, fire-rate, recoil, stats และ FOV มี unit test ด้วย Node runner:
 
-```
+```bash
 node --test tests/constants.test.js tests/logic.test.js
 ```
 
-## Layout
-```
-index.html       overlays + ordered <script> tags
-three.min.js      Three.js r128 (vendored)
-js/constants.js   Valorant reference values + FOV helper   (tested)
-js/logic.js       pure game logic                          (tested)
-js/scene.js       renderer, FOV-103 camera, environment
-js/player.js      pointer lock + mouse look + sensitivity + gated WASD movement
-js/effects.js     shot/kill sound effects + fading bullet tracers
-js/enemy.js       peeking bot with head/body/legs hitboxes
-js/bot.js         shared bot geometry (head/body/legs hitboxes)
-js/targets.js     stationary peek-mode bots + wave (each owns its HP)
-js/peekmode.js    peek modes: wall/smoke cover + wave state machine
-js/flash.js       practice flash: per-agent flight (Breach through-wall / Phoenix curve / Yoru float) + windup + burst
-js/eyeorb.js      destructible Eye Blind Orb: emerges, hovers, arms a nearsight blind (shoot to cancel)
-js/trackdrone.js  destructible Tracking Blind Drone: flies/scans/locks-on, fires an overlay blind (shoot to cancel)
-js/weapon.js      Vandal hitscan over a target set; damage, fire-rate, recoil, wall occlusion
-js/hud.js         crosshair + stats overlay
-js/settings.js    settings panel + persistence
-js/recorder.js    aim log recorder: 128Hz tick buffer + events + JSON export
-js/game.js        composition root + spawn/hold/respawn state machine
+## โครงไฟล์
+```text
+index.html       overlay + ลำดับ script tag
+three.min.js     Three.js r128 แบบ vendored
+js/constants.js  ค่า reference จาก Valorant + FOV helper
+js/logic.js      pure game logic
+js/scene.js      renderer, กล้อง FOV-103, environment
+js/player.js     pointer lock + mouse look + sensitivity + gated WASD movement
+js/effects.js    sound effect ยิง/kill + bullet tracer
+js/enemy.js      peeking bot พร้อม hitbox head/body/legs
+js/bot.js        geometry bot ที่ใช้ร่วมกัน
+js/targets.js    bot แบบนิ่งใน peek mode + wave
+js/peekmode.js   wall/smoke cover + wave state machine
+js/flash.js      practice flash ต่อ agent
+js/eyeorb.js     Eye Blind Orb ที่ยิงทำลายได้
+js/trackdrone.js Tracking Blind Drone ที่บิน/scan/lock-on
+js/weapon.js     Vandal hitscan, damage, fire-rate, recoil, wall occlusion
+js/hud.js        crosshair + stats overlay
+js/settings.js   settings panel + persistence
+js/recorder.js   aim log recorder + JSON export
+js/game.js       composition root + spawn/hold/respawn state machine
 ```

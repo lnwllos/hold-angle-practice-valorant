@@ -205,11 +205,11 @@ function Settings(onChange) {
   function makeHeader() {
     const head = make('div', 'set-head');
     const title = make('div', 'titlewrap');
-    title.appendChild(make('div', 'eyebrow', 'Practice Console'));
-    title.appendChild(make('h2', '', 'Settings'));
+    title.appendChild(make('div', 'eyebrow', 'คอนโซลซ้อม'));
+    title.appendChild(make('h2', '', 'ตั้งค่า'));
 
     const actions = make('div', 'head-actions');
-    const reset = make('button', 'set-btn danger compact', 'Reset stats');
+    const reset = make('button', 'set-btn danger compact', 'รีเซ็ตสถิติ');
     reset.type = 'button';
     reset.addEventListener('click', () => { if (onChange) onChange('reset-stats'); });
     actions.appendChild(reset);
@@ -224,22 +224,22 @@ function Settings(onChange) {
     const primary = make('div', 'set-primary');
 
     const mode = make('div');
-    label(mode, 'Mode');
+    label(mode, 'โหมด');
     mode.appendChild(segmented([
       ['hold', 'Hold', 'angle'],
       ['wallpeek', 'Wall', 'peek'],
-      ['smoke', 'Smoke', 'block'],
+      ['smoke', 'Smoke', 'บัง'],
     ], s.trainingMode, v => {
       s.trainingMode = v;
       if (v !== 'hold' && activeTab === 'threats') activeTab = 'drill';
     }, 3));
 
     const distance = make('div');
-    label(distance, 'Distance');
+    label(distance, 'ระยะ');
     distance.appendChild(segmented([
-      [VALO.DISTANCE.near, 'Near', '8m'],
-      [VALO.DISTANCE.medium, 'Medium', '18m'],
-      [VALO.DISTANCE.far, 'Far', '35m'],
+      [VALO.DISTANCE.near, 'ใกล้', '8m'],
+      [VALO.DISTANCE.medium, 'กลาง', '18m'],
+      [VALO.DISTANCE.far, 'ไกล', '35m'],
     ], s.distance, v => { s.distance = parseFloat(v); }, 3));
 
     primary.appendChild(mode);
@@ -251,8 +251,8 @@ function Settings(onChange) {
     const tabs = make('div', 'set-tabs');
     [
       ['drill', '01', 'Drill'],
-      ['threats', '02', 'Threats'],
-      ['controls', '03', 'Controls'],
+      ['threats', '02', 'Flash'],
+      ['controls', '03', 'ควบคุม'],
       ['crosshair', '04', 'Crosshair'],
     ].forEach(([id, idx, title]) => {
       const btn = make('button', 'tab-btn' + (activeTab === id ? ' active' : ''));
@@ -266,110 +266,110 @@ function Settings(onChange) {
   }
 
   function buildDrillPane(parent) {
-    section(parent, 'Angle Setup');
-    const setup = group(parent, s.trainingMode === 'hold' ? 'Hold angle behavior' : 'Peek-mode wave');
+    section(parent, 'ตั้งค่า Angle');
+    const setup = group(parent, s.trainingMode === 'hold' ? 'พฤติกรรม Hold angle' : 'Wave ใน Peek mode');
 
     if (s.trainingMode === 'hold') {
-      row(setup, 'Peek mode', segmented([
-        ['fixed', 'Fixed', '1 width'],
-        ['random', 'Random', 'weighted'],
-      ], s.peekMode, v => { s.peekMode = v; }, 2), 'Fixed is best for repeatable timing drills.');
+      row(setup, 'โหมด Peek', segmented([
+        ['fixed', 'คงที่', '1 ระยะ'],
+        ['random', 'สุ่ม', 'ถ่วงน้ำหนัก'],
+      ], s.peekMode, v => { s.peekMode = v; }, 2), 'โหมดคงที่เหมาะกับ drill ที่ต้องซ้อม timing ซ้ำ ๆ');
 
       if (s.peekMode === 'fixed') {
-        row(setup, 'Fixed peek width', range(VALO.PEEK.min, VALO.PEEK.max, 0.1,
+        row(setup, 'ระยะ Peek คงที่', range(VALO.PEEK.min, VALO.PEEK.max, 0.1,
           s.peekWidth, v => v.toFixed(1) + 'm', v => { s.peekWidth = v; }));
       } else {
-        row(setup, 'Random max width', range(VALO.PEEK.min, VALO.PEEK.max, 0.1,
+        row(setup, 'ระยะ Peek สูงสุด', range(VALO.PEEK.min, VALO.PEEK.max, 0.1,
           s.peekMaxWidth, v => v.toFixed(1) + 'm', v => { s.peekMaxWidth = v; }),
-          'Wider peeks are still rarer inside this cap.');
+          'Peek กว้างยังมีโอกาสออกน้อยกว่า แม้อยู่ใน cap นี้');
       }
 
-      row(setup, 'Peek side', segmented([
-        ['left', 'Left', 'L'],
-        ['right', 'Right', 'R'],
-        ['random', 'Random', 'mix'],
+      row(setup, 'ฝั่ง Peek', segmented([
+        ['left', 'ซ้าย', 'L'],
+        ['right', 'ขวา', 'R'],
+        ['random', 'สุ่ม', 'ผสม'],
       ], s.side, v => { s.side = v; }, 3));
 
-      setup.appendChild(toggle('Respawn at full peek', 'Queues the next round once the bot reaches full width.', s.respawnOnFullPeek,
+      setup.appendChild(toggle('Respawn ตอน full peek', 'เข้ารอบถัดไปเมื่อ bot peek จนสุดระยะแล้ว', s.respawnOnFullPeek,
         v => { s.respawnOnFullPeek = v; }));
-      setup.appendChild(toggle('First bullet drill', 'One valid enemy shot per peek; misses and body shots end the round.', s.firstBulletOnly,
+      setup.appendChild(toggle('First bullet drill', 'นับหนึ่ง valid shot ต่อ peek; miss หรือ body shot จะจบรอบ', s.firstBulletOnly,
         v => { s.firstBulletOnly = v; }));
-      setup.appendChild(toggle('Miss direction feedback', 'Shows LEFT, RIGHT, HIGH, or LOW after valid misses.', s.showMissDirection,
+      setup.appendChild(toggle('Feedback ทิศทาง miss', 'แสดง ซ้าย, ขวา, สูง, ต่ำ หลัง valid miss', s.showMissDirection,
         v => { s.showMissDirection = v; }));
     } else {
-      row(setup, 'Enemy count mode', segmented([
-        ['fixed', 'Fixed', 'set size'],
-        ['random', 'Random', '1-max'],
+      row(setup, 'โหมดจำนวนเป้า', segmented([
+        ['fixed', 'คงที่', 'กำหนด'],
+        ['random', 'สุ่ม', '1-max'],
       ], s.enemyCountMode, v => { s.enemyCountMode = v; }, 2));
 
       if (s.enemyCountMode === 'fixed') {
-        row(setup, 'Enemy count', range(1, 5, 1, s.enemyCount, v => String(v), v => { s.enemyCount = v; }));
+        row(setup, 'จำนวนเป้า', range(1, 5, 1, s.enemyCount, v => String(v), v => { s.enemyCount = v; }));
       } else {
-        row(setup, 'Enemy max', range(1, 5, 1, s.enemyCountMax, v => String(v), v => { s.enemyCountMax = v; }));
+        row(setup, 'เป้าสูงสุด', range(1, 5, 1, s.enemyCountMax, v => String(v), v => { s.enemyCountMax = v; }));
       }
     }
 
-    section(parent, 'Spawn Timing');
-    const timing = group(parent, 'Respawn cadence');
-    row(timing, 'Spawn delay mode', segmented([
-      ['fixed', 'Fixed', 'steady'],
-      ['random', 'Random', 'variable'],
+    section(parent, 'เวลา Spawn');
+    const timing = group(parent, 'จังหวะ Respawn');
+    row(timing, 'โหมดดีเลย์ Spawn', segmented([
+      ['fixed', 'คงที่', 'นิ่ง'],
+      ['random', 'สุ่ม', 'แปรผัน'],
     ], s.spawnDelayMode, v => { s.spawnDelayMode = v; }, 2));
 
     if (s.spawnDelayMode === 'fixed') {
-      row(timing, 'Respawn delay', range(0, 2, 0.1, s.respawnDelay,
+      row(timing, 'ดีเลย์ Respawn', range(0, 2, 0.1, s.respawnDelay,
         v => v.toFixed(1) + 's', v => { s.respawnDelay = v; }));
     } else {
-      row(timing, 'Random delay min', range(0, 3, 0.1, s.respawnDelayMin,
+      row(timing, 'ดีเลย์สุ่ม ต่ำสุด', range(0, 3, 0.1, s.respawnDelayMin,
         v => v.toFixed(1) + 's', v => { s.respawnDelayMin = v; }));
-      row(timing, 'Random delay max', range(0, 3, 0.1, s.respawnDelayMax,
+      row(timing, 'ดีเลย์สุ่ม สูงสุด', range(0, 3, 0.1, s.respawnDelayMax,
         v => v.toFixed(1) + 's', v => { s.respawnDelayMax = v; }));
     }
   }
 
   function buildThreatsPane(parent) {
-    section(parent, 'Flash Training');
+    section(parent, 'ฝึก Flash');
     if (s.trainingMode !== 'hold') {
-      note(parent, 'Flash rounds are available in Hold angle mode.');
+      note(parent, 'Flash round ใช้ได้ใน Hold angle mode');
       return;
     }
 
-    const tuning = group(parent, 'Round chance');
-    row(tuning, 'Flash frequency', range(0, 1, 0.05, s.flashChance,
+    const tuning = group(parent, 'โอกาสในรอบ');
+    row(tuning, 'ความถี่ Flash', range(0, 1, 0.05, s.flashChance,
       v => Math.round(v * 100) + '%', v => { s.flashChance = v; }),
-      'Chance that the next spawn becomes a flash round.');
-    tuning.appendChild(toggle('Flash sound', 'Windup and pop audio cues.', s.flashSound, v => { s.flashSound = v; }));
+      'โอกาสที่ spawn ถัดไปจะเป็น flash round');
+    tuning.appendChild(toggle('เสียง Flash', 'เสียง windup และ pop cue', s.flashSound, v => { s.flashSound = v; }));
 
-    const agents = group(parent, 'Enabled flashes');
-    agents.appendChild(toggle('Breach Flashpoint', 'Through-wall windup flash.', s.flashBreach, v => { s.flashBreach = v; }));
-    agents.appendChild(toggle('Phoenix Curveball', 'Fast curve around the corner.', s.flashPhoenix, v => { s.flashPhoenix = v; }));
-    agents.appendChild(toggle('Yoru Blindside', 'Floating blue flash from the angle.', s.flashYoru, v => { s.flashYoru = v; }));
-    agents.appendChild(toggle('Eye Blind Orb', 'Shootable nearsight orb.', s.flashEyeOrb, v => { s.flashEyeOrb = v; }));
-    agents.appendChild(toggle('Tracking Blind Drone', 'Shootable scanner that locks on.', s.flashTrackDrone, v => { s.flashTrackDrone = v; }));
+    const agents = group(parent, 'Flash ที่เปิดใช้');
+    agents.appendChild(toggle('Breach Flashpoint', 'Flash windup ทะลุกำแพง', s.flashBreach, v => { s.flashBreach = v; }));
+    agents.appendChild(toggle('Phoenix Curveball', 'Flash โค้งเร็วรอบมุม', s.flashPhoenix, v => { s.flashPhoenix = v; }));
+    agents.appendChild(toggle('Yoru Blindside', 'Flash สีน้ำเงินลอยออกจาก angle', s.flashYoru, v => { s.flashYoru = v; }));
+    agents.appendChild(toggle('Eye Blind Orb', 'Orb nearsight ที่ยิงทำลายได้', s.flashEyeOrb, v => { s.flashEyeOrb = v; }));
+    agents.appendChild(toggle('Tracking Blind Drone', 'Drone scanner ที่ lock-on และยิงทำลายได้', s.flashTrackDrone, v => { s.flashTrackDrone = v; }));
   }
 
   function buildControlsPane(parent) {
-    section(parent, 'Aim Input');
-    const aim = group(parent, 'Mouse feel');
-    row(aim, 'Valorant sensitivity', range(0.05, 2.0, 0.01, s.valSens,
+    section(parent, 'อินพุต Aim');
+    const aim = group(parent, 'ฟีลเมาส์');
+    row(aim, 'Sens Valorant', range(0.05, 2.0, 0.01, s.valSens,
       v => v.toFixed(2), v => { s.valSens = v; }, refreshCm),
-      'Uses Valorant yaw constant: sensitivity x 0.07 deg/count.');
+      'ใช้ Valorant yaw constant: sensitivity x 0.07 deg/count');
     row(aim, 'Mouse DPI', range(100, 3200, 100, s.dpi,
       v => String(v), v => { s.dpi = v; }, refreshCm));
-    row(aim, 'Sens fine-tune', range(0.5, 2.0, 0.05, s.sensMultiplier,
+    row(aim, 'จูน Sens ละเอียด', range(0.5, 2.0, 0.05, s.sensMultiplier,
       v => 'x' + v.toFixed(2), v => { s.sensMultiplier = v; }, refreshCm));
     aim.appendChild(make('div', 'hint cm-readout', cmReadoutText()));
 
-    section(parent, 'Weapon');
+    section(parent, 'อาวุธ');
     const weapon = group(parent, 'Vandal');
-    weapon.appendChild(toggle('Vandal recoil', 'First shot stays accurate; follow-up shots climb.', s.recoilOn,
+    weapon.appendChild(toggle('Recoil Vandal', 'นัดแรกยังตรง; นัดต่อไปจะไต่ขึ้น', s.recoilOn,
       v => { s.recoilOn = v; }));
-    row(weapon, 'Recoil intensity', range(0.2, 2.0, 0.1, s.recoilIntensity,
+    row(weapon, 'ความแรง Recoil', range(0.2, 2.0, 0.1, s.recoilIntensity,
       v => 'x' + v.toFixed(1), v => { s.recoilIntensity = v; }));
 
-    section(parent, 'Session Data');
+    section(parent, 'ข้อมูล Session');
     const data = group(parent, 'Aim log');
-    data.appendChild(toggle('Log recording', 'Records valid shots, first bullets, miss direction, flashes, and bot positions.', s.logRecord,
+    data.appendChild(toggle('อัด Log', 'บันทึก valid shot, first bullet, ทิศทาง miss, flash และตำแหน่ง bot', s.logRecord,
       v => { s.logRecord = v; }));
   }
 
@@ -391,7 +391,7 @@ function Settings(onChange) {
   function buildCrosshairPane(parent) {
     section(parent, 'Crosshair');
     const preview = make('div', 'ch-preview');
-    preview.appendChild(make('div', 'tag', 'Preview'));
+    preview.appendChild(make('div', 'tag', 'พรีวิว'));
     const cv = document.createElement('canvas');
     cv.id = 'settings-crosshair-preview';
     cv.width = 80;
@@ -400,15 +400,15 @@ function Settings(onChange) {
     parent.appendChild(preview);
     drawSettingsCrosshair();
 
-    const shape = group(parent, 'Shape');
-    row(shape, 'Crosshair color', colorInput(drawSettingsCrosshair));
-    row(shape, 'Crosshair length', range(0, 20, 1, s.chLength,
+    const shape = group(parent, 'รูปทรง');
+    row(shape, 'สี Crosshair', colorInput(drawSettingsCrosshair));
+    row(shape, 'ความยาว Crosshair', range(0, 20, 1, s.chLength,
       v => String(v), v => { s.chLength = v; }, drawSettingsCrosshair));
-    row(shape, 'Crosshair gap', range(0, 15, 1, s.chGap,
+    row(shape, 'ช่องว่าง Crosshair', range(0, 15, 1, s.chGap,
       v => String(v), v => { s.chGap = v; }, drawSettingsCrosshair));
-    row(shape, 'Crosshair thickness', range(1, 6, 1, s.chThickness,
+    row(shape, 'ความหนา Crosshair', range(1, 6, 1, s.chThickness,
       v => String(v), v => { s.chThickness = v; }, drawSettingsCrosshair));
-    shape.appendChild(toggle('Center dot', 'Adds a small point at the exact center.', s.chDot,
+    shape.appendChild(toggle('จุดกลาง', 'เพิ่มจุดเล็กที่กลาง Crosshair', s.chDot,
       v => { s.chDot = v; drawSettingsCrosshair(); }));
   }
 
@@ -435,7 +435,7 @@ function Settings(onChange) {
   }
 
   function cmReadoutText() {
-    return 'Approx ' + cm360(s.valSens, s.dpi, VALO.YAW_CONST).toFixed(1) + ' cm/360';
+    return 'ประมาณ ' + cm360(s.valSens, s.dpi, VALO.YAW_CONST).toFixed(1) + ' cm/360';
   }
 
   build();

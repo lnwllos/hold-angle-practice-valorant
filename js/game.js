@@ -152,6 +152,9 @@
 
   function failFirstBulletRound() {
     if (mode !== 'hold' || !enemy || !enemy.alive) return;
+    if (recorder && recorder.isRecording()) {
+      recorder.logEvent('round-end', Object.assign(targetEventFields(enemy), { reason: 'first-bullet-fail' }));
+    }
     enemy.kill();
     state = 'dead';
     respawnAt = performance.now() / 1000 + resolveRespawnDelay();
@@ -296,7 +299,7 @@
         settings.setLogRecord(false);
         // Defer the modal: onCap fires from inside recorder.tick (the rAF loop), and a
         // synchronous alert() would freeze the frame. setTimeout lets the frame finish first.
-        setTimeout(() => alert('Aim log: ถึงลิมิต ~10 นาที — หยุดอัดและดาวน์โหลดไฟล์แล้ว'), 0);
+        setTimeout(() => alert('Aim log: ถึงลิมิตประมาณ 10 นาที - หยุดอัดและดาวน์โหลดไฟล์แล้ว'), 0);
       },
     });
     sessionStart = performance.now();
@@ -314,7 +317,7 @@
     function showPointerLockFallback() {
       b.style.display = 'flex';
       panel.classList.add('open');
-      if (hint) hint.textContent = 'Pointer lock is blocked in this preview. Open index.html or start.bat in your browser to play.';
+      if (hint) hint.textContent = 'Pointer lock ถูกบล็อกใน preview นี้ เปิด index.html หรือ start.bat ใน browser เพื่อเล่น';
     }
 
     // Request RAW mouse input (no OS pointer acceleration) so fast flicks map 1:1,
@@ -341,7 +344,7 @@
     }
 
     b.addEventListener('click', () => {
-      if (hint) hint.textContent = 'Click to play · ESC for settings';
+      if (hint) hint.textContent = 'คลิกเพื่อเล่น · ESC เปิดตั้งค่า';
       requestLock(true);
     });
     document.addEventListener('pointerlockchange', () => {
@@ -629,6 +632,9 @@
       if (settings.get().respawnOnFullPeek && !wasFullPeeked && enemy.fullPeeked) {
         // Keep the cover wall during the respawn delay; dispose it only when the next
         // enemy is created so the angle does not flicker open between spawns.
+        if (recorder && recorder.isRecording()) {
+          recorder.logEvent('round-end', Object.assign(targetEventFields(enemy), { reason: 'full-peek' }));
+        }
         enemy.kill();
         state = 'dead';
         respawnAt = nowSec + resolveRespawnDelay();
