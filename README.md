@@ -35,6 +35,10 @@ almost-early/almost-late based on the leading/trailing half of the head.
 - **Spawn delay mode**: fixed respawn delay (default 0.5s) or random delay with min/max.
 - **Respawn at full peek**: starts the normal fixed/random respawn delay when the current bot
   reaches its configured peek width.
+- **First bullet drill** (Hold mode): allows one valid enemy shot per peek. A miss or body shot
+  ends the round so you can isolate first-bullet discipline.
+- **Miss direction feedback** (Hold mode): shows LEFT / RIGHT / HIGH / LOW after valid misses,
+  plus WAIT / NO TARGET for trigger-discipline mistakes.
 - **Flash training**: enable **Breach (Flashpoint)**, **Phoenix (Curveball)**, and/or **Yoru
   (Blindside)**. When at least one is on, **Flash frequency** sets the chance a spawn becomes a
   flash round: an agent-colored flash pops at the angle with that agent's real windup and blind
@@ -62,14 +66,16 @@ almost-early/almost-late based on the leading/trailing half of the head.
   `holdangle-log-*.json` per session — a structured file meant for AI-assisted analysis of
   aim, flicks, recoil, and sensitivity. Schema v2 uses a 64 Hz analysis profile, gives each
   round/wave/target an ID, and stores full shot context: signed yaw/pitch error, target
-  head/distance, time since visible, time since last shot, burst index, recoil offset, player
-  speed, wall-block status, and a readable shot reason. The session header captures your config
-  at the start; if you change settings/mode or reset stats mid-recording, that is logged as a
-  `config`/`reset-stats` event and split into segment summaries. Auto-stops and downloads at a
-  ~10-minute safety cap.
+  head/distance, time since visible, time since last shot, first-bullet flag, burst index,
+  recoil offset, player speed, wall-block status, valid-shot metrics, and a readable shot reason.
+  The final summary now counts from when recording starts, not from earlier unrecorded play. The
+  session header captures your config at the start; if you change settings/mode or reset stats
+  mid-recording, that is logged as a `config`/`reset-stats` event and split into segment
+  summaries. Auto-stops and downloads at a ~10-minute safety cap.
 
-The HUD tracks **kills, accuracy %, headshot %, average reaction time**, and session time
-(reaction time = from when the enemy clears the corner to your killing shot).
+The HUD tracks **kills, valid-shot accuracy, first-bullet accuracy, raw accuracy, headshot %,
+no-target shots, early shots, average reaction time**, and session time (reaction time = from
+when the enemy clears the corner to your killing shot).
 
 ## Develop / test
 Pure game logic (damage, peek sampling, sensitivity, fire-rate, recoil, stats, FOV) is

@@ -164,10 +164,31 @@ test('stats: accuracy, headshot %, average reaction', () => {
   assert.ok(Math.abs(L.statAvgReaction(s) - 400) < 1e-9);   // (300+500)/2
 });
 
+test('stats: valid and first-bullet accuracy ignore invalid shots', () => {
+  const s = L.makeStats();
+  L.recordShot(s, { valid: true, hit: true, isHead: true, firstBullet: true, reason: 'hit-head' });
+  L.recordShot(s, { valid: true, hit: false, isHead: false, firstBullet: true, reason: 'miss-high' });
+  L.recordShot(s, { valid: false, hit: false, reason: 'no-target' });
+  L.recordShot(s, { valid: false, hit: false, reason: 'target-not-visible' });
+  L.recordHit(s, true);
+  assert.strictEqual(s.shots, 4);
+  assert.strictEqual(s.validShots, 2);
+  assert.strictEqual(s.validHits, 1);
+  assert.strictEqual(s.firstBulletShots, 2);
+  assert.strictEqual(s.firstBulletHits, 1);
+  assert.strictEqual(s.noTargetShots, 1);
+  assert.strictEqual(s.preVisibleShots, 1);
+  assert.strictEqual(s.missHigh, 1);
+  assert.ok(Math.abs(L.statValidAccuracy(s) - 0.5) < 1e-9);
+  assert.ok(Math.abs(L.statFirstBulletPct(s) - 0.5) < 1e-9);
+});
+
 test('stats: empty stats report zeros, not NaN', () => {
   const s = L.makeStats();
   assert.strictEqual(L.statAccuracy(s), 0);
   assert.strictEqual(L.statHeadshotPct(s), 0);
+  assert.strictEqual(L.statValidAccuracy(s), 0);
+  assert.strictEqual(L.statFirstBulletPct(s), 0);
   assert.strictEqual(L.statAvgReaction(s), 0);
 });
 
@@ -337,12 +358,22 @@ test('angleBetweenDeg returns the angle in degrees between [x,y,z] vectors', () 
 test('buildSummary derives rounded session stats and carries stoppedBy', () => {
   const s = L.makeStats();
   s.shots = 10; s.hits = 8; s.headshots = 4; s.kills = 4; s.reactionTotalMs = 1248; s.reactionSamples = 4;
+  s.validShots = 5; s.validHits = 3; s.firstBulletShots = 4; s.firstBulletHits = 2;
+  s.noTargetShots = 1; s.preVisibleShots = 2; s.flashHitShots = 3; s.wallBlockedShots = 4;
+  s.missLeft = 5; s.missRight = 6; s.missHigh = 7; s.missLow = 8;
   const out = L.buildSummary(s, 'toggle');
   assert.strictEqual(out.shots, 10);
   assert.strictEqual(out.hits, 8);
   assert.strictEqual(out.kills, 4);
   assert.strictEqual(out.accuracyPct, 80);
   assert.strictEqual(out.headshotPct, 50);
+  assert.strictEqual(out.validAccuracyPct, 60);
+  assert.strictEqual(out.firstBulletPct, 50);
+  assert.strictEqual(out.noTargetShots, 1);
+  assert.strictEqual(out.preVisibleShots, 2);
+  assert.strictEqual(out.flashHitShots, 3);
+  assert.strictEqual(out.wallBlockedShots, 4);
+  assert.deepStrictEqual(out.missDirection, { left: 5, right: 6, high: 7, low: 8 });
   assert.strictEqual(out.avgReactionMs, 312);
   assert.strictEqual(out.reactionSamples, 4);
   assert.strictEqual(out.stoppedBy, 'toggle');

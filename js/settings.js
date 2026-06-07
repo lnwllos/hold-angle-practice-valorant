@@ -19,6 +19,8 @@ function Settings(onChange) {
     flashTrackDrone: true,
     flashChance: 0.55,
     flashSound: true,
+    firstBulletOnly: false,
+    showMissDirection: true,
     valSens: 0.5,
     recoilOn: true,
   };
@@ -45,6 +47,8 @@ function Settings(onChange) {
     enemyCountMode: 'fixed',          // 'fixed' | 'random'
     enemyCount: 3,                    // fixed wave size (1..5)
     enemyCountMax: 5,                 // random upper bound (1..5)
+    firstBulletOnly: false,           // hold mode: end the round after the first non-kill enemy shot
+    showMissDirection: true,
     valSens: 0.5,
     dpi: 800,
     sensMultiplier: 1.0,
@@ -288,6 +292,10 @@ function Settings(onChange) {
 
       setup.appendChild(toggle('Respawn at full peek', 'Queues the next round once the bot reaches full width.', s.respawnOnFullPeek,
         v => { s.respawnOnFullPeek = v; }));
+      setup.appendChild(toggle('First bullet drill', 'One valid enemy shot per peek; misses and body shots end the round.', s.firstBulletOnly,
+        v => { s.firstBulletOnly = v; }));
+      setup.appendChild(toggle('Miss direction feedback', 'Shows LEFT, RIGHT, HIGH, or LOW after valid misses.', s.showMissDirection,
+        v => { s.showMissDirection = v; }));
     } else {
       row(setup, 'Enemy count mode', segmented([
         ['fixed', 'Fixed', 'set size'],
@@ -361,7 +369,7 @@ function Settings(onChange) {
 
     section(parent, 'Session Data');
     const data = group(parent, 'Aim log');
-    data.appendChild(toggle('Log recording', 'Records yaw, pitch, shots, kills, flashes, and bot positions.', s.logRecord,
+    data.appendChild(toggle('Log recording', 'Records valid shots, first bullets, miss direction, flashes, and bot positions.', s.logRecord,
       v => { s.logRecord = v; }));
   }
 

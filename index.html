@@ -141,6 +141,10 @@
     .shot-feedback.good { color: var(--mint); }
     .shot-feedback.nearSlow { color: #FF8F7A; }
     .shot-feedback.slow { color: var(--red); }
+    .shot-feedback.missLeft, .shot-feedback.missRight,
+    .shot-feedback.missHigh, .shot-feedback.missLow { color: #FFCF66; }
+    .shot-feedback.noTarget, .shot-feedback.preVisible,
+    .shot-feedback.wallBlocked, .shot-feedback.oneTapFail { color: var(--red); }
     @keyframes feedback-float {
       0% { opacity: 0; transform: translateY(12px); }
       16% { opacity: 1; }

@@ -134,6 +134,29 @@
     return 'miss-centered';
   }
 
+  function isValidEnemyShot(info, ti) {
+    return !!(info.target && ti && ti.visible && !info.hitFlash && !info.blockedByWall);
+  }
+
+  function feedbackKindForReason(reason) {
+    return {
+      'miss-left': 'missLeft',
+      'miss-right': 'missRight',
+      'miss-high': 'missHigh',
+      'miss-low': 'missLow',
+      'no-target': 'noTarget',
+      'target-not-visible': 'preVisible',
+      'wall-blocked': 'wallBlocked',
+    }[reason] || null;
+  }
+
+  function failFirstBulletRound() {
+    if (mode !== 'hold' || !enemy || !enemy.alive) return;
+    enemy.kill();
+    state = 'dead';
+    respawnAt = performance.now() / 1000 + resolveRespawnDelay();
+  }
+
   // The mutable config that affects aim/analysis. Logged in the session header at start AND
   // as a 'config' event whenever it changes mid-recording, so the data never goes stale.
   function logConfig() {
@@ -148,6 +171,7 @@
       },
       crosshair: { color: c.chColor, length: c.chLength, gap: c.chGap, thickness: c.chThickness, dot: c.chDot },
       recoil: { on: c.recoilOn, intensity: c.recoilIntensity },
+      drill: { firstBulletOnly: c.firstBulletOnly, showMissDirection: c.showMissDirection },
     };
   }
   // Session metadata captured when recording starts (the config at t=0).
@@ -179,10 +203,20 @@
       getSettings: () => settings.weaponCfg(),
       on: {
         shot: info => {
+          const nowMs = performance.now();
+          const ti = targetInfo(info.target, true);
+          const fields = targetEventFields(info.target);
+          const reason = shotReason(info, ti);
+          const valid = isValidEnemyShot(info, ti);
+          const hit = !!info.hitZone && !info.hitFlash;
+          const isHead = info.hitZone === 'head';
+          let firstBullet = false;
+          if (valid) {
+            const meta = assignTargetMeta(info.target);
+            firstBullet = !meta.validShotCount;
+            meta.validShotCount = (meta.validShotCount || 0) + 1;
+          }
           if (recorder && recorder.isRecording()) {
-            const nowMs = performance.now();
-            const ti = targetInfo(info.target, true);
-            const fields = targetEventFields(info.target);
             recorder.logEvent('shot', Object.assign(fields, {
               yaw: round2(three.camera.rotation.y * R2D),
               pitch: round2(three.camera.rotation.x * R2D),
@@ -197,25 +231,40 @@
               timeSinceVisibleMs: mode === 'hold' && visibleAt != null ? Math.round(nowMs - visibleAt * 1000) : null,
               timeSinceLastShotMs: lastShotEventAtMs == null ? null : Math.round(nowMs - lastShotEventAtMs),
               burstIndex: info.burstIndex,
+              firstBullet,
               recoilYawDeg: round2(info.recoilYawDeg || 0),
               recoilPitchDeg: round2(info.recoilPitchDeg || 0),
               playerSpeedMps: round2(lastPlayerSpeedMps),
               blockedByWall: !!info.blockedByWall,
               hitZone: info.hitZone || 'miss',
-              hit: !!info.hitZone && !info.hitFlash,
-              reason: shotReason(info, ti),
+              hit,
+              reason,
             }));
             lastShotEventAtMs = nowMs;
           }
-          recordShot(stats);
+          recordShot(stats, { valid, hit, isHead, firstBullet, reason });
           if (info.hitFlash) { hud.showHitmarker(); return; } // shooting a flash: marker only
+          const cfg = settings.get();
+          const missFeedback = feedbackKindForReason(reason);
+          if ((reason === 'no-target' || reason === 'target-not-visible' || reason === 'wall-blocked') && missFeedback) {
+            hud.showShotFeedback(missFeedback);
+          } else if (valid && !hit && cfg.showMissDirection && missFeedback) {
+            hud.showShotFeedback(missFeedback);
+          }
           const kind = mode === 'hold'
             ? classifyShotTimingByLateral(info.visible, info.hitZone, info.aimX, info.botX,
                 info.movementDir, info.fullPeeked, VALO.AIM_FEEDBACK.perfectHeadHalfWidth)
             : classifyStationaryShot(info.hitZone);
-          if (kind) hud.showShotFeedback(kind);
+          if (kind && (hit || !missFeedback || !cfg.showMissDirection)) hud.showShotFeedback(kind);
+          if (cfg.firstBulletOnly && mode === 'hold' && valid && firstBullet && info.hitZone !== 'head') {
+            hud.showShotFeedback('oneTapFail');
+            failFirstBulletRound();
+          }
         },
-        hit: (zone, isHead) => recordHit(stats, isHead),
+        hit: (zone, isHead, bot) => {
+          if (bot && bot.isFlash) return;
+          recordHit(stats, isHead);
+        },
         kill: (bot) => {
           if (bot && bot.isFlash) return; // flash destroyed: handled in updateState; not an enemy kill
           if (mode === 'hold') {
@@ -316,13 +365,14 @@
     if (action === 'reset-stats') {
       if (recorder && recorder.isRecording()) recorder.logEvent('reset-stats', {});
       Object.assign(stats, makeStats());
+      if (recorder && recorder.isRecording()) recorder.markStatsBaseline();
       sessionStart = performance.now();
     }
     // Log recording toggle (use the recorder's own state as the previous value).
     if (recorder) {
       const wasRecording = recorder.isRecording();
       const wantLog = settings.get().logRecord;
-      if (wantLog && !wasRecording) recorder.start(buildLogMeta());
+      if (wantLog && !wasRecording) { lastShotEventAtMs = null; recorder.start(buildLogMeta()); }
       else if (!wantLog && wasRecording) recorder.stop('toggle');
       // A settings/mode change while already recording: log the new config so the session
       // header (config at t=0) stays meaningful and changes are traceable in the timeline.

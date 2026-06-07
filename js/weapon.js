@@ -86,7 +86,7 @@ function Weapon(deps) {
     if (deps.effects) { deps.effects.playShot(); deps.effects.addTracer(ray.ray, nearest ? nearest.point : null); }
 
     if (bot && hitZone) {
-      deps.on.hit(hitZone, hitZone === 'head');
+      deps.on.hit(hitZone, hitZone === 'head', bot);
       const killed = bot.applyDamage(hitZone);
       if (killed) deps.on.kill(bot);
     }

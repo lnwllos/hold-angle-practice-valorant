@@ -239,9 +239,55 @@ function angleBetweenDeg(a, b) {
 
 // --- Session stats ---
 function makeStats() {
-  return { shots: 0, hits: 0, headshots: 0, kills: 0, reactionTotalMs: 0, reactionSamples: 0 };
+  return {
+    shots: 0,
+    hits: 0,
+    headshots: 0,
+    kills: 0,
+    reactionTotalMs: 0,
+    reactionSamples: 0,
+    validShots: 0,
+    validHits: 0,
+    validHeadshots: 0,
+    firstBulletShots: 0,
+    firstBulletHits: 0,
+    firstBulletHeadshots: 0,
+    noTargetShots: 0,
+    preVisibleShots: 0,
+    flashHitShots: 0,
+    wallBlockedShots: 0,
+    missLeft: 0,
+    missRight: 0,
+    missHigh: 0,
+    missLow: 0,
+  };
 }
-function recordShot(s) { s.shots += 1; }
+function recordShot(s, info) {
+  s.shots += 1;
+  if (!info) return;
+  if (info.valid) {
+    s.validShots = (s.validShots || 0) + 1;
+    if (info.hit) {
+      s.validHits = (s.validHits || 0) + 1;
+      if (info.isHead) s.validHeadshots = (s.validHeadshots || 0) + 1;
+    }
+  }
+  if (info.firstBullet) {
+    s.firstBulletShots = (s.firstBulletShots || 0) + 1;
+    if (info.hit) {
+      s.firstBulletHits = (s.firstBulletHits || 0) + 1;
+      if (info.isHead) s.firstBulletHeadshots = (s.firstBulletHeadshots || 0) + 1;
+    }
+  }
+  if (info.reason === 'no-target') s.noTargetShots = (s.noTargetShots || 0) + 1;
+  else if (info.reason === 'target-not-visible') s.preVisibleShots = (s.preVisibleShots || 0) + 1;
+  else if (info.reason === 'flash-hit') s.flashHitShots = (s.flashHitShots || 0) + 1;
+  else if (info.reason === 'wall-blocked') s.wallBlockedShots = (s.wallBlockedShots || 0) + 1;
+  else if (info.reason === 'miss-left') s.missLeft = (s.missLeft || 0) + 1;
+  else if (info.reason === 'miss-right') s.missRight = (s.missRight || 0) + 1;
+  else if (info.reason === 'miss-high') s.missHigh = (s.missHigh || 0) + 1;
+  else if (info.reason === 'miss-low') s.missLow = (s.missLow || 0) + 1;
+}
 function recordHit(s, isHead) { s.hits += 1; if (isHead) s.headshots += 1; }
 function recordKill(s, reactionMs) {
   s.kills += 1;
@@ -252,6 +298,8 @@ function recordKill(s, reactionMs) {
 }
 function statAccuracy(s) { return s.shots ? s.hits / s.shots : 0; }
 function statHeadshotPct(s) { return s.hits ? s.headshots / s.hits : 0; }
+function statValidAccuracy(s) { return s.validShots ? (s.validHits || 0) / s.validShots : 0; }
+function statFirstBulletPct(s) { return s.firstBulletShots ? (s.firstBulletHits || 0) / s.firstBulletShots : 0; }
 function statAvgReaction(s) {
   const samples = s.reactionSamples || 0;
   return samples ? s.reactionTotalMs / samples : 0;
@@ -266,6 +314,22 @@ function buildSummary(s, stoppedBy) {
     kills: s.kills,
     accuracyPct: Math.round(statAccuracy(s) * 100),
     headshotPct: Math.round(statHeadshotPct(s) * 100),
+    validShots: s.validShots || 0,
+    validHits: s.validHits || 0,
+    validAccuracyPct: Math.round(statValidAccuracy(s) * 100),
+    firstBulletShots: s.firstBulletShots || 0,
+    firstBulletHits: s.firstBulletHits || 0,
+    firstBulletPct: Math.round(statFirstBulletPct(s) * 100),
+    noTargetShots: s.noTargetShots || 0,
+    preVisibleShots: s.preVisibleShots || 0,
+    flashHitShots: s.flashHitShots || 0,
+    wallBlockedShots: s.wallBlockedShots || 0,
+    missDirection: {
+      left: s.missLeft || 0,
+      right: s.missRight || 0,
+      high: s.missHigh || 0,
+      low: s.missLow || 0,
+    },
     avgReactionMs: reactionSamples ? Math.round(statAvgReaction(s)) : null,
     reactionSamples,
     stoppedBy: stoppedBy || 'toggle',
@@ -280,7 +344,7 @@ if (typeof module !== 'undefined' && module.exports) {
     flashOverlayOpacity, nearsightIntensity, lockOnProgress, inScanCone, flashDestroyedInTime,
     classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover, smokePhase,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
-    statAccuracy, statHeadshotPct, statAvgReaction, buildSummary,
+    statAccuracy, statHeadshotPct, statValidAccuracy, statFirstBulletPct, statAvgReaction, buildSummary,
     ticksToEmit, angleBetweenDeg,
   };
 }

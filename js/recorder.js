@@ -22,8 +22,13 @@ function Recorder(deps) {
   let meta = null;
   let ticks = [];
   let events = [];
+  let statsBaseline = null;
 
   function relT() { return Math.round(now() - startMs); }
+
+  function snapshotStats() {
+    return Object.assign(makeStats(), deps.getStats ? deps.getStats() : makeStats());
+  }
 
   function start(m) {
     recording = true;
@@ -32,6 +37,7 @@ function Recorder(deps) {
     meta = m || {};
     ticks = [];
     events = [];
+    statsBaseline = snapshotStats();
   }
 
   function tick(dtSec, snapshot) {
@@ -57,7 +63,7 @@ function Recorder(deps) {
   function stop(stoppedBy) {
     if (!recording) return null;
     recording = false;
-    const stats = deps.getStats ? deps.getStats() : makeStats();
+    const stats = diffStats(snapshotStats(), statsBaseline || makeStats());
     const durationMs = relT();
     const summary = buildSummary(stats, stoppedBy || 'toggle');
     const obj = {
@@ -79,7 +85,19 @@ function Recorder(deps) {
     return obj;
   }
 
-  return { start, stop, tick, logEvent, isRecording: () => recording };
+  function markStatsBaseline() {
+    statsBaseline = snapshotStats();
+  }
+
+  return { start, stop, tick, logEvent, markStatsBaseline, isRecording: () => recording };
+}
+
+function diffStats(current, baseline) {
+  const out = makeStats();
+  Object.keys(out).forEach(k => {
+    out[k] = Math.max(0, (current && current[k] || 0) - (baseline && baseline[k] || 0));
+  });
+  return out;
 }
 
 function buildEventSegments(events, durationMs, initialConfig) {
@@ -121,12 +139,37 @@ function configFields(src) {
 }
 
 function makeEventSummary() {
-  return { shots: 0, hits: 0, kills: 0, headshots: 0, reactionTotalMs: 0, reactionSamples: 0 };
+  return {
+    shots: 0, hits: 0, kills: 0, headshots: 0, reactionTotalMs: 0, reactionSamples: 0,
+    validShots: 0, validHits: 0, validHeadshots: 0, firstBulletShots: 0, firstBulletHits: 0,
+    noTargetShots: 0, preVisibleShots: 0, flashHitShots: 0, wallBlockedShots: 0,
+    missLeft: 0, missRight: 0, missHigh: 0, missLow: 0,
+  };
 }
 
 function countEvent(s, e) {
   if (e.type === 'shot') {
     s.shots += 1;
+    const valid = e.targetVisible && e.targetId != null && e.reason !== 'flash-hit' && e.reason !== 'wall-blocked';
+    if (valid) {
+      s.validShots += 1;
+      if (e.hit) {
+        s.validHits += 1;
+        if (e.hitZone === 'head') s.validHeadshots += 1;
+      }
+    }
+    if (e.firstBullet) {
+      s.firstBulletShots += 1;
+      if (e.hit) s.firstBulletHits += 1;
+    }
+    if (e.reason === 'no-target') s.noTargetShots += 1;
+    else if (e.reason === 'target-not-visible') s.preVisibleShots += 1;
+    else if (e.reason === 'flash-hit') s.flashHitShots += 1;
+    else if (e.reason === 'wall-blocked') s.wallBlockedShots += 1;
+    else if (e.reason === 'miss-left') s.missLeft += 1;
+    else if (e.reason === 'miss-right') s.missRight += 1;
+    else if (e.reason === 'miss-high') s.missHigh += 1;
+    else if (e.reason === 'miss-low') s.missLow += 1;
     if (e.hit) {
       s.hits += 1;
       if (e.hitZone === 'head') s.headshots += 1;
@@ -147,6 +190,17 @@ function finalizeEventSummary(s) {
     kills: s.kills,
     accuracyPct: s.shots ? Math.round((s.hits / s.shots) * 100) : 0,
     headshotPct: s.hits ? Math.round((s.headshots / s.hits) * 100) : 0,
+    validShots: s.validShots,
+    validHits: s.validHits,
+    validAccuracyPct: s.validShots ? Math.round((s.validHits / s.validShots) * 100) : 0,
+    firstBulletShots: s.firstBulletShots,
+    firstBulletHits: s.firstBulletHits,
+    firstBulletPct: s.firstBulletShots ? Math.round((s.firstBulletHits / s.firstBulletShots) * 100) : 0,
+    noTargetShots: s.noTargetShots,
+    preVisibleShots: s.preVisibleShots,
+    flashHitShots: s.flashHitShots,
+    wallBlockedShots: s.wallBlockedShots,
+    missDirection: { left: s.missLeft, right: s.missRight, high: s.missHigh, low: s.missLow },
     avgReactionMs: s.reactionSamples ? Math.round(s.reactionTotalMs / s.reactionSamples) : null,
     reactionSamples: s.reactionSamples,
   };

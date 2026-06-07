@@ -59,6 +59,14 @@ function Hud(crosshairCfg) {
     good: 'จังหวะดี',
     nearSlow: 'เกือบช้า',
     slow: 'ยิงช้าเกิน',
+    missLeft: 'LEFT',
+    missRight: 'RIGHT',
+    missHigh: 'HIGH',
+    missLow: 'LOW',
+    noTarget: 'NO TARGET',
+    preVisible: 'WAIT',
+    wallBlocked: 'WALL',
+    oneTapFail: 'ONE TAP FAIL',
   };
 
   function setPeekHint(show) {
@@ -80,12 +88,22 @@ function Hud(crosshairCfg) {
   }
 
   function update(stats, sessionSec) {
+    const avgReaction = (stats.reactionSamples || 0) ? `${statAvgReaction(stats).toFixed(0)}<small>ms</small>` : '-';
     statsEl.innerHTML =
-      `Kills: <b>${stats.kills}</b><br>` +
-      `Accuracy: <b>${(statAccuracy(stats) * 100).toFixed(0)}%</b><br>` +
-      `Headshot: <b>${(statHeadshotPct(stats) * 100).toFixed(0)}%</b><br>` +
-      `Avg reaction: <b>${statAvgReaction(stats).toFixed(0)} ms</b><br>` +
-      `Time: <b>${sessionSec.toFixed(0)}s</b>`;
+      '<div class="st-hdr">Live</div>' +
+      row('Kills', stats.kills, 'accent') +
+      row('Valid Acc', (statValidAccuracy(stats) * 100).toFixed(0) + '<small>%</small>', 'accent') +
+      row('First', (statFirstBulletPct(stats) * 100).toFixed(0) + '<small>%</small>') +
+      row('Raw Acc', (statAccuracy(stats) * 100).toFixed(0) + '<small>%</small>') +
+      row('HS', (statHeadshotPct(stats) * 100).toFixed(0) + '<small>%</small>') +
+      row('No target', stats.noTargetShots || 0) +
+      row('Early', stats.preVisibleShots || 0) +
+      row('React', avgReaction) +
+      row('Time', sessionSec.toFixed(0) + '<small>s</small>');
+  }
+
+  function row(k, v, cls) {
+    return `<div class="st-row"><span class="st-k">${k}</span><span class="st-v ${cls || ''}">${v}</span></div>`;
   }
 
   function showShotFeedback(kind) {
