@@ -151,6 +151,15 @@ function classifyShotTimingByLateral(isVisible, hitZone, aimX, botX, movementDir
   return isAhead ? 'fast' : 'slow';
 }
 
+// --- Stationary-target feedback (peek modes) ---
+// Stationary shot feedback: head is a perfect kill shot, body/legs are good,
+// anything else (occluder/miss) shows nothing.
+function classifyStationaryShot(hitZone) {
+  if (hitZone === 'head') return 'perfect';
+  if (hitZone === 'body' || hitZone === 'legs') return 'good';
+  return null;
+}
+
 // --- Recoil (approximate Vandal pattern) ---
 // shotIndex is the 0-based index within a continuous burst. First shot is dead accurate.
 // Vertical climbs quickly over the first ~5 shots then slows; horizontal sway starts after.
@@ -179,7 +188,7 @@ if (typeof module !== 'undefined' && module.exports) {
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
     sampleSpawnDelay, sampleEnemyCount, randomTargetPlacements, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
     flashOverlayOpacity,
-    classifyShotTimingByPeek, classifyShotTimingByLateral,
+    classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
   };

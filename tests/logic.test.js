@@ -248,3 +248,12 @@ test('randomTargetPlacements still returns count when space is too tight', () =>
   const out = L.randomTargetPlacements(5, bounds, mulberry32(7));
   assert.strictEqual(out.length, 5); // never throws / never infinite-loops
 });
+
+// --- peek mode: stationary shot feedback ---
+test('classifyStationaryShot maps head/body/legs and misses', () => {
+  assert.strictEqual(L.classifyStationaryShot('head'), 'perfect');
+  assert.strictEqual(L.classifyStationaryShot('body'), 'good');
+  assert.strictEqual(L.classifyStationaryShot('legs'), 'good');
+  assert.strictEqual(L.classifyStationaryShot('wall'), null);
+  assert.strictEqual(L.classifyStationaryShot(null), null);
+});
