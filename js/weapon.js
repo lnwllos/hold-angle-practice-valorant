@@ -40,7 +40,7 @@ function Weapon(deps) {
 
     const { targets, occluders } = deps.getShootables();
     const alive = targets.filter(t => t.alive);
-    const primary = alive[0] || null; // hold-angle has exactly one; drives miss-side feedback
+    const primary = alive[0] || null; // enemy is first in the set, so primary stays the enemy for miss-side feedback
 
     ray.setFromCamera(center, deps.camera);
 

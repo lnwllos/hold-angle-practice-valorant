@@ -280,6 +280,8 @@
       factor = blindFactor(angleDeg, VALO.FLASH.blindFullDeg, VALO.FLASH.blindZeroDeg);
     }
     const dur = blindDuration(flashAgent.blind, factor);
+    // Nearsight scales BOTH duration and peak intensity by factor (a stronger look-away
+    // incentive than the overlay blind, which scales duration only).
     if (flash.blindKind === 'nearsight') hud.triggerNearsight(dur, factor, flashAgent.color);
     else hud.triggerBlind(dur, flashAgent.color);
     if (settings.get().flashSound) effects.playFlashPop();

@@ -57,6 +57,7 @@ function TrackDrone(scene, cfg) {
   let alive = true;
   let destroyed = false;
   let fired = false;
+  let firedT = -1;
   let disposed = false;
   let burstT = -1;
 
@@ -118,7 +119,7 @@ function TrackDrone(scene, cfg) {
     light.intensity = 0.6 + lk * 2.4;
     core.scale.setScalar(1 + lk * 1.5);
 
-    if (!fired && lk >= 1) fired = true;
+    if (!fired && lk >= 1) { fired = true; firedT = t; }
     // expired without firing -> just drops/dissolves
     if (!fired && t >= flightTime()) destroy();
   }
@@ -155,8 +156,9 @@ function TrackDrone(scene, cfg) {
     get alive() { return alive; },
     get shouldBlind() { return alive && fired; },
     get blindKind() { return 'overlay'; },
+    get windingUp() { return false; }, // no windup sound: the lock-on glow is the cue
     get destroyed() { return destroyed; },
-    get done() { return destroyed ? burstT >= 0.25 : (fired ? t >= flightTime() + 0.3 : false); },
+    get done() { return destroyed ? burstT >= 0.25 : (fired ? t >= firedT + 0.3 : false); },
   };
   hitbox.userData.bot = api;
   hitbox.userData.zone = 'core';

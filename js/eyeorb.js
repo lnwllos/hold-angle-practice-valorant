@@ -57,6 +57,7 @@ function EyeOrb(scene, cfg) {
   function update(dt) {
     if (disposed) return;
     t += dt;
+    if (!destroyed && t >= lifetime) destroy(); // expire: collapse with the destroy burst
 
     if (destroyed) {
       if (burstT >= 0) {
@@ -124,6 +125,7 @@ function EyeOrb(scene, cfg) {
     updateMatrixWorld: () => hitbox.updateMatrixWorld(true),
     get position() { return orb.position; },
     get alive() { return alive; },
+    get windingUp() { return false; }, // no windup sound: the warning pulse is the cue
     get shouldBlind() { return alive && t >= armAt; },
     get blindKind() { return 'nearsight'; },
     get destroyed() { return destroyed; },
