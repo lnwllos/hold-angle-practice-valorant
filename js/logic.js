@@ -216,6 +216,17 @@ function recoilOffset(shotIndex, intensity) {
   return { yaw: sway * intensity, pitch: climb * intensity };
 }
 
+// --- Aim log recorder helpers ---
+// Fixed-timestep tick accumulator. accSec is leftover time, dtSec this frame, periodSec the
+// tick period (all seconds). Returns how many samples to emit this frame and the new leftover.
+function ticksToEmit(accSec, dtSec, periodSec) {
+  if (periodSec <= 0) return { count: 0, remainder: accSec };
+  let acc = accSec + dtSec;
+  let count = 0;
+  while (acc >= periodSec) { acc -= periodSec; count += 1; }
+  return { count, remainder: acc };
+}
+
 // --- Session stats ---
 function makeStats() {
   return { shots: 0, hits: 0, headshots: 0, kills: 0, reactionTotalMs: 0 };
@@ -236,5 +247,6 @@ if (typeof module !== 'undefined' && module.exports) {
     classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover, smokePhase,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
+    ticksToEmit,
   };
 }

@@ -309,3 +309,19 @@ test('flashDestroyedInTime: true only if destroyed before the blind started', ()
   assert.strictEqual(L.flashDestroyedInTime(true, true), false);  // blinded already
   assert.strictEqual(L.flashDestroyedInTime(false, false), false);
 });
+
+// --- aim log recorder helpers ---
+test('ticksToEmit emits floor((acc+dt)/period) samples and keeps the remainder', () => {
+  const p = 1 / 128;
+  let r = L.ticksToEmit(0, 0.016667, p);
+  assert.strictEqual(r.count, 2);
+  assert.ok(Math.abs(r.remainder - (0.016667 - 2 * p)) < 1e-9);
+  r = L.ticksToEmit(0, 0.001, p);
+  assert.strictEqual(r.count, 0);
+  assert.ok(Math.abs(r.remainder - 0.001) < 1e-9);
+  r = L.ticksToEmit(0, 0.05, p);
+  assert.strictEqual(r.count, 6);
+  r = L.ticksToEmit(0.02, 0.02, 0);
+  assert.strictEqual(r.count, 0);
+  assert.strictEqual(r.remainder, 0.02);
+});
