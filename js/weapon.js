@@ -90,5 +90,5 @@ function Weapon(deps) {
     return rayObj.origin.x + rayObj.direction.x * t;
   }
 
-  return { update };
+  return { update, isFiring: () => firing };
 }
