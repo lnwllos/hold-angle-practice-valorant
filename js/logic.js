@@ -119,17 +119,6 @@ function flashOverlayOpacity(elapsed, duration, rampUp) {
   return Math.max(0, Math.min(1, (duration - elapsed) / decaySpan));
 }
 
-// --- Destructible flash: nearsight effect & drone detection ---
-// Nearsight intensity for the current frame, 0..1. elapsed is seconds since the blind began.
-// Ramps 0->1 over rampUp, holds at 1, then eases 1->0 over the last fadeOut seconds.
-function nearsightIntensity(elapsed, rampUp, duration, fadeOut) {
-  if (duration <= 0 || elapsed <= 0 || elapsed >= duration) return 0;
-  if (rampUp > 0 && elapsed < rampUp) return elapsed / rampUp;
-  const fadeStart = duration - fadeOut;
-  if (fadeOut > 0 && elapsed > fadeStart) return Math.max(0, (duration - elapsed) / fadeOut);
-  return 1;
-}
-
 // Lock-on progress 0..1 — fraction of the required lock time the player has been continuously
 // detected. Clamped; reaches 1 (lock complete) at lockTime. lockTime <= 0 means instant.
 function lockOnProgress(elapsedInCone, lockTime) {
@@ -248,6 +237,18 @@ function pickPrimaryTarget(aliveTargets) {
   return null;
 }
 
+// Move `current` toward `target` by a fixed time-constant so transitions are frame-rate
+// independent: a full 0->1 sweep takes `riseTau` seconds going up, `fallTau` going down.
+// Clamps so it never overshoots `target`. Used to ease the live nearsight on/off.
+function approach(current, target, dt, riseTau, fallTau) {
+  if (dt <= 0 || current === target) return current;
+  const tau = target > current ? riseTau : fallTau;
+  if (tau <= 0) return target;
+  const next = current + Math.sign(target - current) * (dt / tau);
+  if ((target > current && next > target) || (target < current && next < target)) return target;
+  return next;
+}
+
 // --- Session stats ---
 function makeStats() {
   return {
@@ -352,7 +353,7 @@ if (typeof module !== 'undefined' && module.exports) {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
     sampleSpawnDelay, sampleEnemyCount, randomTargetPlacements, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
-    flashOverlayOpacity, nearsightIntensity, lockOnProgress, inScanCone, flashDestroyedInTime,
+    flashOverlayOpacity, approach, lockOnProgress, inScanCone, flashDestroyedInTime,
     classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover, smokePhase,
     recoilOffset, pickPrimaryTarget, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statValidAccuracy, statFirstBulletPct, statAvgReaction, buildSummary,
