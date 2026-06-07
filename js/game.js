@@ -16,6 +16,7 @@
   // Flash-round lifecycle (a flash pops, then the held enemy peeks)
   let flash = null;
   let flashAgent = null;
+  let flashKey = null;
   let enemyPeekAt = 0;
   let windupSoundPlayed = false;
   let detonationHandled = false;
@@ -31,7 +32,10 @@
       effects,
       getShootables: () => {
         if (mode === 'hold') {
-          return { targets: enemy ? [enemy] : [], occluders: enemy ? [enemy.wall] : [] };
+          const targets = [];
+          if (enemy) targets.push(enemy);              // enemy first so it stays the feedback "primary"
+          if (flash && flash.isFlash) targets.push(flash);
+          return { targets, occluders: enemy ? [enemy.wall] : [] };
         }
         return {
           targets: peekMode ? peekMode.getTargets() : [],
@@ -42,6 +46,7 @@
       on: {
         shot: info => {
           recordShot(stats);
+          if (info.hitFlash) { hud.showHitmarker(); return; } // shooting a flash: marker only
           const kind = mode === 'hold'
             ? classifyShotTimingByLateral(info.visible, info.hitZone, info.aimX, info.botX,
                 info.movementDir, info.fullPeeked, VALO.AIM_FEEDBACK.perfectHeadHalfWidth)
@@ -49,7 +54,8 @@
           if (kind) hud.showShotFeedback(kind);
         },
         hit: (zone, isHead) => recordHit(stats, isHead),
-        kill: () => {
+        kill: (bot) => {
+          if (bot && bot.isFlash) return; // flash destroyed: handled in updateState; not an enemy kill
           if (mode === 'hold') {
             const reaction = visibleAt != null ? (performance.now() / 1000 - visibleAt) * 1000 : 0;
             recordKill(stats, reaction);
@@ -210,6 +216,8 @@
     if (cfg.flashBreach) enabled.push('breach');
     if (cfg.flashPhoenix) enabled.push('phoenix');
     if (cfg.flashYoru) enabled.push('yoru');
+    if (cfg.flashEyeOrb) enabled.push('eyeorb');
+    if (cfg.flashTrackDrone) enabled.push('trackdrone');
     if (shouldFlashRound(cfg.flashChance, enabled.length > 0, Math.random)) {
       startFlashRound(enabled);
     } else {
@@ -217,39 +225,63 @@
     }
   }
 
-  // Spawn the enemy hidden behind cover (so the angle/wall is held), then play a flash that
-  // pops in front of the corner. The enemy is held until shortly after detonation.
+  // Build the right flash object for the picked agent. Breach/Phoenix/Yoru are the cosmetic
+  // projectile flashes; eyeorb/trackdrone are destructible (shootable) flashes.
+  function makeFlash(key, side) {
+    const a = VALO.FLASH[key];
+    const distance = settings.get().distance;
+    if (key === 'eyeorb') {
+      return EyeOrb(three.scene, {
+        color: a.color, travel: a.travel, windup: a.windup,
+        destroyHits: a.destroyHits, side, distance,
+      });
+    }
+    if (key === 'trackdrone') {
+      return TrackDrone(three.scene, {
+        color: a.color, flightTime: a.flightTime, scanStartDelay: a.scanStartDelay,
+        lockOnTime: a.lockOnTime, scanRange: a.scanRange, scanConeDeg: a.scanConeDeg,
+        destroyHits: a.destroyHits, side, distance,
+        getPlayerPos: () => ({ x: player.position.x, z: player.position.z }),
+      });
+    }
+    return Flash(three.scene, {
+      color: a.color, windup: a.windup, flight: a.flight,
+      travel: a.travel, speed: a.speed, side, distance,
+    });
+  }
+
+  // Spawn the enemy hidden behind cover (the angle is held), then play the flash. The enemy
+  // is released to peek shortly after the blind (or after the flash is destroyed/expires).
   function startFlashRound(enabled) {
     if (flash) { flash.dispose(); flash = null; } // defensive: never leak a previous flash
-    const key = pickFlashAgent(enabled, Math.random);
-    flashAgent = VALO.FLASH[key];
+    flashKey = pickFlashAgent(enabled, Math.random);
+    flashAgent = VALO.FLASH[flashKey];
     const side = resolveSide();
     spawnEnemy({ side, peekWidth: resolvePeekWidth() }); // wall + bot, hidden; sets state 'active'
-    state = 'flashing';                                  // override: hold the bot until the pop
-    flash = Flash(three.scene, {
-      color: flashAgent.color,
-      windup: flashAgent.windup,
-      flight: flashAgent.flight,
-      travel: flashAgent.travel,
-      speed: flashAgent.speed,
-      side,
-      distance: settings.get().distance,
-    });
+    state = 'flashing';                                  // override: hold the bot until the blind
+    flash = makeFlash(flashKey, side);
     windupSoundPlayed = false;
     detonationHandled = false;
   }
 
-  // At detonation, blind by how far the player's view is from the flash, then queue the peek.
-  function handleDetonation(nowSec) {
-    const camPos = new THREE.Vector3();
-    const fwd = new THREE.Vector3();
-    three.camera.getWorldPosition(camPos);
-    three.camera.getWorldDirection(fwd);
-    const toFlash = flash.position.clone().sub(camPos).normalize();
-    const cos = Math.max(-1, Math.min(1, fwd.dot(toFlash)));
-    const angleDeg = (Math.acos(cos) * 180) / Math.PI;
-    const factor = blindFactor(angleDeg, VALO.FLASH.blindFullDeg, VALO.FLASH.blindZeroDeg);
-    hud.triggerBlind(blindDuration(flashAgent.blind, factor), flashAgent.color);
+  // Trigger the blind for whatever flash just became ready. Nearsight (orb) and the cosmetic
+  // projectile flashes are gated by the view angle to the flash; the drone is a direct hit
+  // (full strength). Then queue the held enemy's peek.
+  function handleBlind(nowSec) {
+    let factor = 1;
+    if (flashKey !== 'trackdrone') {
+      const camPos = new THREE.Vector3();
+      const fwd = new THREE.Vector3();
+      three.camera.getWorldPosition(camPos);
+      three.camera.getWorldDirection(fwd);
+      const toFlash = flash.position.clone().sub(camPos).normalize();
+      const cos = Math.max(-1, Math.min(1, fwd.dot(toFlash)));
+      const angleDeg = (Math.acos(cos) * 180) / Math.PI;
+      factor = blindFactor(angleDeg, VALO.FLASH.blindFullDeg, VALO.FLASH.blindZeroDeg);
+    }
+    const dur = blindDuration(flashAgent.blind, factor);
+    if (flash.blindKind === 'nearsight') hud.triggerNearsight(dur, factor, flashAgent.color);
+    else hud.triggerBlind(dur, flashAgent.color);
     if (settings.get().flashSound) effects.playFlashPop();
     enemyPeekAt = nowSec + VALO.FLASH.enemyPeekDelay;
   }
@@ -268,9 +300,15 @@
         windupSoundPlayed = true;
         if (settings.get().flashSound) effects.playFlashWindup(flashAgent.windup);
       }
-      if (!detonationHandled && flash.detonated) {
+      // Destroyed before any blind -> success: release the enemy, no blind.
+      if (!detonationHandled && flash.destroyed) {
         detonationHandled = true;
-        handleDetonation(nowSec);
+        enemyPeekAt = nowSec + VALO.FLASH.enemyPeekDelay;
+      }
+      // Otherwise the flash becomes ready (projectile detonates / orb arms / drone fires).
+      if (!detonationHandled && flash.shouldBlind) {
+        detonationHandled = true;
+        handleBlind(nowSec);
       }
       if (state === 'flashing' && detonationHandled && nowSec >= enemyPeekAt) {
         state = 'active'; // release the held enemy; it begins peeking next frame
@@ -313,6 +351,7 @@
     if (!autoRespawned) weapon.update(dt, nowSec);
     effects.update(dt);
     hud.updateBlind(dt);
+    hud.updateNearsight(dt);
     hud.update(stats, (performance.now() - sessionStart) / 1000);
     hud.setPeekHint(mode === 'wallpeek' && !!peekMode && peekMode.isAwaitingCover());
   }
