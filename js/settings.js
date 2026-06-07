@@ -34,6 +34,7 @@ function Settings(onChange) {
     chGap: 4,
     chThickness: 2,
     chDot: false,
+    logRecord: false,
   };
   let s = load();
 
@@ -158,6 +159,9 @@ function Settings(onChange) {
     row('Crosshair thickness', range(1, 6, 1, s.chThickness, v => String(v), v => s.chThickness = v));
     row('Crosshair dot', checkbox(s.chDot, v => s.chDot = v));
 
+    row('Log recording (อัดข้อมูลการเล็ง)', checkbox(s.logRecord, v => s.logRecord = v),
+      'อัด yaw/pitch + ตำแหน่งบอท 128Hz ระหว่างเล่น; ปิดสวิตช์เพื่อดาวน์โหลดไฟล์ JSON (หยุดเองที่ ~10 นาที).');
+
   }
 
   function refreshCm() {
@@ -172,6 +176,7 @@ function Settings(onChange) {
     sens: () => ({ valSens: s.valSens, multiplier: s.sensMultiplier }),
     crosshair: () => ({ color: s.chColor, length: s.chLength, gap: s.chGap, thickness: s.chThickness, dot: s.chDot }),
     weaponCfg: () => ({ recoilOn: s.recoilOn, recoilIntensity: s.recoilIntensity }),
+    setLogRecord: v => { s.logRecord = v; save(); build(); },
     refreshCm,
     rebuild: build,
   };
