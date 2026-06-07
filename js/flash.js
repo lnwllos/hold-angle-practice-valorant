@@ -131,6 +131,9 @@ function Flash(scene, cfg) {
     position: detPos,
     get windingUp() { return t >= travel && t < detonateAt; },
     get detonated() { return t >= detonateAt; },
+    get shouldBlind() { return t >= detonateAt; },
+    get blindKind() { return 'overlay'; },
+    get destroyed() { return false; }, // projectile flashes are not destructible
     get done() { return t >= burstEnd; },
   };
 }
