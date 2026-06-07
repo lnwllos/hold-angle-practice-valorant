@@ -42,7 +42,10 @@ function Weapon(deps) {
 
     const { targets, occluders } = deps.getShootables();
     const alive = targets.filter(t => t.alive);
-    const primary = alive[0] || null; // enemy is first in the set, so primary stays the enemy for miss-side feedback
+    // Primary = the enemy bot for miss-side feedback. Never a destructible flash: those expose
+    // only a single hitbox, and targetInfo reads the bot's head at hitboxes[2]. If the enemy is
+    // already dead but a flash is still alive, primary is null (no enemy aim context).
+    const primary = pickPrimaryTarget(alive);
 
     ray.setFromCamera(center, deps.camera);
 

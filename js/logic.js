@@ -237,6 +237,17 @@ function angleBetweenDeg(a, b) {
   return (Math.acos(c) * 180) / Math.PI;
 }
 
+// The aim-analysis "primary" target: the first alive ENEMY bot in the shootable set, or null.
+// Destructible flashes (eyeorb/trackdrone) share the shootable interface but are NOT bots —
+// they only expose a single hitbox, so they must never be chosen as the primary (targetInfo
+// reads the bot's head at hitboxes[2]). When only a flash is alive (e.g. the enemy was just
+// killed but the flash is still floating), this returns null so no enemy aim info is computed.
+function pickPrimaryTarget(aliveTargets) {
+  if (!aliveTargets) return null;
+  for (const t of aliveTargets) if (t && !t.isFlash) return t;
+  return null;
+}
+
 // --- Session stats ---
 function makeStats() {
   return {
@@ -343,7 +354,7 @@ if (typeof module !== 'undefined' && module.exports) {
     sampleSpawnDelay, sampleEnemyCount, randomTargetPlacements, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
     flashOverlayOpacity, nearsightIntensity, lockOnProgress, inScanCone, flashDestroyedInTime,
     classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover, smokePhase,
-    recoilOffset, makeStats, recordShot, recordHit, recordKill,
+    recoilOffset, pickPrimaryTarget, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statValidAccuracy, statFirstBulletPct, statAvgReaction, buildSummary,
     ticksToEmit, angleBetweenDeg,
   };

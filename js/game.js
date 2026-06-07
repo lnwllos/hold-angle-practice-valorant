@@ -81,6 +81,9 @@
   function targetInfo(tgt, includeHead) {
     tgt = tgt || aimTarget();
     if (!tgt) return null;
+    // Only enemy bots have a head hitbox (index 2). Destructible flashes share the shootable
+    // interface but expose a single hitbox, so there is no enemy aim info to compute for them.
+    if (tgt.isFlash || !tgt.hitboxes || !tgt.hitboxes[2]) return null;
     three.camera.getWorldPosition(_camPos);
     three.camera.getWorldDirection(_fwd);
     tgt.updateMatrixWorld();

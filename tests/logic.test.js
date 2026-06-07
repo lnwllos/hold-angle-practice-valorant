@@ -384,3 +384,24 @@ test('buildSummary derives rounded session stats and carries stoppedBy', () => {
   assert.strictEqual(z.reactionSamples, 0);
   assert.strictEqual(z.stoppedBy, 'cap');
 });
+
+// --- primary aim-target selection (must never be a destructible flash) ---
+test('pickPrimaryTarget returns the enemy when both enemy and flash are alive', () => {
+  const enemy = { isFlash: false };
+  const flash = { isFlash: true };
+  assert.strictEqual(L.pickPrimaryTarget([enemy, flash]), enemy);
+});
+
+test('pickPrimaryTarget returns null when only a flash is alive (enemy already killed)', () => {
+  // Regression: after killing the enemy in a flash round, the destructible flash kept
+  // living and became alive[0]. targetInfo then read flash.hitboxes[2] (undefined) and
+  // threw, freezing the render loop. The primary must be an enemy bot or null, never a flash.
+  const flash = { isFlash: true };
+  assert.strictEqual(L.pickPrimaryTarget([flash]), null);
+});
+
+test('pickPrimaryTarget returns null for an empty list and the first enemy otherwise', () => {
+  assert.strictEqual(L.pickPrimaryTarget([]), null);
+  const a = { isFlash: false }, b = { isFlash: false };
+  assert.strictEqual(L.pickPrimaryTarget([a, b]), a);
+});
