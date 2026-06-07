@@ -278,3 +278,34 @@ test('smokePhase covers, then fades, then stays clear', () => {
   assert.deepStrictEqual(L.smokePhase(3.6, 3, 0.6), { phase: 'clear', opacity: 0 });
   assert.deepStrictEqual(L.smokePhase(10, 3, 0.6), { phase: 'clear', opacity: 0 });
 });
+
+// --- destructible flash: nearsight & drone detection ---
+test('nearsightIntensity: 0 before start, ramps, holds at 1, fades to 0', () => {
+  // rampUp=0.2, duration=1.6, fadeOut=0.4
+  assert.strictEqual(L.nearsightIntensity(0, 0.2, 1.6, 0.4), 0);
+  assert.ok(Math.abs(L.nearsightIntensity(0.1, 0.2, 1.6, 0.4) - 0.5) < 1e-9); // half-way up the ramp
+  assert.strictEqual(L.nearsightIntensity(0.8, 0.2, 1.6, 0.4), 1);            // holding
+  assert.ok(Math.abs(L.nearsightIntensity(1.4, 0.2, 1.6, 0.4) - 0.5) < 1e-9); // half-way down the fade
+  assert.strictEqual(L.nearsightIntensity(1.6, 0.2, 1.6, 0.4), 0);            // done
+  assert.strictEqual(L.nearsightIntensity(2.0, 0.2, 1.6, 0.4), 0);            // past end
+});
+
+test('lockOnProgress clamps to [0,1] and completes at lockTime', () => {
+  assert.strictEqual(L.lockOnProgress(0, 0.4), 0);
+  assert.ok(Math.abs(L.lockOnProgress(0.2, 0.4) - 0.5) < 1e-9);
+  assert.strictEqual(L.lockOnProgress(0.4, 0.4), 1);
+  assert.strictEqual(L.lockOnProgress(0.9, 0.4), 1);   // clamped
+  assert.strictEqual(L.lockOnProgress(0.1, 0), 1);     // zero lock time = instant
+});
+
+test('inScanCone: inside half-angle is true, outside is false', () => {
+  assert.strictEqual(L.inScanCone(0, 60), true);
+  assert.strictEqual(L.inScanCone(30, 60), true);   // exactly the edge (half = 30)
+  assert.strictEqual(L.inScanCone(31, 60), false);
+});
+
+test('flashDestroyedInTime: true only if destroyed before the blind started', () => {
+  assert.strictEqual(L.flashDestroyedInTime(true, false), true);
+  assert.strictEqual(L.flashDestroyedInTime(true, true), false);  // blinded already
+  assert.strictEqual(L.flashDestroyedInTime(false, false), false);
+});
