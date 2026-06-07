@@ -20,6 +20,75 @@
   let enemyPeekAt = 0;
   let windupSoundPlayed = false;
   let detonationHandled = false;
+  let recorder = null;
+
+  // --- aim log helpers ---
+  const R2D = 180 / Math.PI;
+  const _camPos = new THREE.Vector3();
+  const _fwd = new THREE.Vector3();
+  const _head = new THREE.Vector3();
+  const round2 = n => Math.round(n * 100) / 100;
+  const round3 = n => Math.round(n * 1000) / 1000;
+
+  // The bot the player should currently be aiming at: the held enemy in hold mode, else the
+  // nearest alive peek-mode target. null when there is no live bot.
+  function aimTarget() {
+    if (mode === 'hold') return enemy && enemy.alive ? enemy : null;
+    if (!peekMode) return null;
+    const bots = peekMode.getTargets().filter(b => b.alive);
+    if (bots.length === 0) return null;
+    let best = bots[0], bestD = Infinity;
+    for (const b of bots) {
+      const dx = b.x - player.position.x, dz = b.z - player.position.z;
+      const d = dx * dx + dz * dz;
+      if (d < bestD) { bestD = d; best = b; }
+    }
+    return best;
+  }
+
+  // Head world position, visibility, and crosshair->head angle for the current aim target.
+  function targetInfo() {
+    const tgt = aimTarget();
+    if (!tgt) return null;
+    three.camera.getWorldPosition(_camPos);
+    three.camera.getWorldDirection(_fwd);
+    tgt.updateMatrixWorld();
+    tgt.hitboxes[2].getWorldPosition(_head); // head is index 2 in makeBotParts()
+    const to = [_head.x - _camPos.x, _head.y - _camPos.y, _head.z - _camPos.z];
+    return {
+      head: [round3(_head.x), round3(_head.y), round3(_head.z)],
+      visible: !!tgt.visible,
+      aimErrorDeg: round2(angleBetweenDeg([_fwd.x, _fwd.y, _fwd.z], to)),
+    };
+  }
+
+  // One 128Hz sample of player aim/position/firing + target info.
+  function snapshot() {
+    return {
+      yaw: round2(player.yaw * R2D),
+      pitch: round2(player.pitch * R2D),
+      pos: [round3(player.position.x), round3(player.position.y), round3(player.position.z)],
+      firing: weapon.isFiring(),
+      target: targetInfo(),
+    };
+  }
+
+  // Session metadata captured when recording starts.
+  function buildLogMeta() {
+    const c = settings.get();
+    return {
+      startedAt: new Date().toISOString(),
+      trainingMode: c.trainingMode,
+      distanceM: c.distance,
+      fovDeg: VALO.FOV_H,
+      sensitivity: {
+        valSens: c.valSens, dpi: c.dpi, multiplier: c.sensMultiplier,
+        cm360Approx: Math.round(cm360(c.valSens, c.dpi, VALO.YAW_CONST) * 10) / 10,
+      },
+      crosshair: { color: c.chColor, length: c.chLength, gap: c.chGap, thickness: c.chThickness, dot: c.chDot },
+      recoil: { on: c.recoilOn, intensity: c.recoilIntensity },
+    };
+  }
 
   function init() {
     settings = Settings(onSettingsChange);
@@ -45,6 +114,16 @@
       getSettings: () => settings.weaponCfg(),
       on: {
         shot: info => {
+          if (recorder && recorder.isRecording()) {
+            const ti = targetInfo();
+            recorder.logEvent('shot', {
+              yaw: round2(player.yaw * R2D),
+              pitch: round2(player.pitch * R2D),
+              aimErrorDeg: ti ? ti.aimErrorDeg : null,
+              hitZone: info.hitZone || 'miss',
+              hit: !!info.hitZone && !info.hitFlash,
+            });
+          }
           recordShot(stats);
           if (info.hitFlash) { hud.showHitmarker(); return; } // shooting a flash: marker only
           const kind = mode === 'hold'
@@ -59,11 +138,13 @@
           if (mode === 'hold') {
             const reaction = visibleAt != null ? (performance.now() / 1000 - visibleAt) * 1000 : 0;
             recordKill(stats, reaction);
+            if (recorder && recorder.isRecording()) recorder.logEvent('kill', { reactionMs: Math.round(reaction) });
             effects.playKill();
             state = 'dead';
             respawnAt = performance.now() / 1000 + resolveRespawnDelay();
           } else {
             recordKill(stats, 0); // peek modes do not time reactions
+            if (recorder && recorder.isRecording()) recorder.logEvent('kill', { reactionMs: 0 });
             effects.playKill();
             // PeekMode detects the wave being cleared in its own update().
           }
@@ -71,6 +152,13 @@
       },
     });
     hud = Hud(settings.crosshair());
+    recorder = Recorder({
+      getStats: () => stats,
+      onCap: () => {
+        settings.setLogRecord(false);
+        alert('Aim log: ถึงลิมิต ~10 นาที — หยุดอัดและดาวน์โหลดไฟล์แล้ว');
+      },
+    });
     sessionStart = performance.now();
     applyMode();
     setupPointerLock();
@@ -136,6 +224,12 @@
       Object.assign(stats, makeStats());
       sessionStart = performance.now();
     }
+    // Log recording toggle (use the recorder's own state as the previous value).
+    if (recorder) {
+      const wantLog = settings.get().logRecord;
+      if (wantLog && !recorder.isRecording()) recorder.start(buildLogMeta());
+      else if (!wantLog && recorder.isRecording()) recorder.stop('toggle');
+    }
     // distance/peek/side changes take effect on the next spawn.
     applyMode();
   }
@@ -200,13 +294,18 @@
   }
   function spawnEnemy(opts) {
     if (enemy) enemy.dispose();
-    enemy = Enemy(three.scene, {
-      distance: settings.get().distance,
-      peekWidth: opts && opts.peekWidth != null ? opts.peekWidth : resolvePeekWidth(),
-      side: opts && opts.side != null ? opts.side : resolveSide(),
-    });
+    const side = opts && opts.side != null ? opts.side : resolveSide();
+    const peekWidth = opts && opts.peekWidth != null ? opts.peekWidth : resolvePeekWidth();
+    enemy = Enemy(three.scene, { distance: settings.get().distance, peekWidth, side });
     state = 'active';
     visibleAt = null;
+    if (recorder && recorder.isRecording()) {
+      recorder.logEvent('spawn', {
+        side: side < 0 ? 'left' : 'right',
+        peekWidthM: round2(peekWidth),
+        distanceM: settings.get().distance,
+      });
+    }
   }
 
   // Decide whether the next spawn is a plain enemy or a flash round.
@@ -263,6 +362,9 @@
     spawnEnemy({ side, peekWidth: resolvePeekWidth() }); // wall + bot, hidden; sets state 'active'
     state = 'flashing';                                  // override: hold the bot until the blind
     flash = makeFlash(flashKey, side);
+    if (recorder && recorder.isRecording()) {
+      recorder.logEvent('flash', { agent: flashKey, windupS: flashAgent.windup, blindMaxS: flashAgent.blind });
+    }
     windupSoundPlayed = false;
     detonationHandled = false;
   }
@@ -283,6 +385,9 @@
       factor = blindFactor(angleDeg, VALO.FLASH.blindFullDeg, VALO.FLASH.blindZeroDeg);
     }
     const dur = blindDuration(flashAgent.blind, factor);
+    if (recorder && recorder.isRecording()) {
+      recorder.logEvent('blind', { agent: flashKey, durationS: round2(dur), factor: round2(factor) });
+    }
     // Nearsight scales BOTH duration and peak intensity by factor (a stronger look-away
     // incentive than the overlay blind, which scales duration only).
     if (flash.blindKind === 'nearsight') hud.triggerNearsight(dur, factor, flashAgent.color);
@@ -324,7 +429,10 @@
     if (state === 'active' && enemy && enemy.alive) {
       const wasFullPeeked = enemy.fullPeeked;
       enemy.update(lastDt);
-      if (visibleAt == null && enemy.visible) visibleAt = nowSec; // reaction clock starts
+      if (visibleAt == null && enemy.visible) {
+        visibleAt = nowSec; // reaction clock starts
+        if (recorder && recorder.isRecording()) recorder.logEvent('visible', {});
+      }
       if (settings.get().respawnOnFullPeek && !wasFullPeeked && enemy.fullPeeked) {
         // Keep the cover wall during the respawn delay; dispose it only when the next
         // enemy is created so the angle does not flicker open between spawns.
@@ -353,6 +461,7 @@
     let autoRespawned = false;
     if (mode === 'hold') autoRespawned = updateState(nowSec);
     else if (peekMode) peekMode.update(dt);
+    if (recorder.isRecording()) recorder.tick(dt, snapshot);
     if (!autoRespawned) weapon.update(dt, nowSec);
     effects.update(dt);
     hud.updateBlind(dt);
