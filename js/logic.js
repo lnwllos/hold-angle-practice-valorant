@@ -51,6 +51,14 @@ function sampleSpawnDelay(mode, fixedDelay, minDelay, maxDelay, rng) {
   return lo + (hi - lo) * rng();
 }
 
+// --- Peek mode: wave count ---
+// 'fixed' -> the fixed value clamped to [1, max]. 'random' -> an integer in [1, max].
+function sampleEnemyCount(mode, fixed, max, rng) {
+  const hi = Math.max(1, Math.floor(max));
+  if (mode !== 'random') return Math.max(1, Math.min(hi, Math.floor(fixed)));
+  return Math.min(hi, 1 + Math.floor(rng() * hi));
+}
+
 // --- Flash: agent selection and round decision ---
 // enabledKeys: array of 'breach'|'phoenix'|'yoru' currently enabled. rng() -> [0,1).
 function pickFlashAgent(enabledKeys, rng) {
@@ -143,7 +151,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
-    sampleSpawnDelay, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
+    sampleSpawnDelay, sampleEnemyCount, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
     flashOverlayOpacity,
     classifyShotTimingByPeek, classifyShotTimingByLateral,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,

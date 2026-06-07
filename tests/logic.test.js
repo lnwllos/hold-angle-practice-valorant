@@ -85,6 +85,19 @@ test('sampleSpawnDelay samples random delay inside ordered range', () => {
   assert.ok(Math.abs(L.sampleSpawnDelay('random', 0.5, 1.5, 0.2, () => 0.5) - 0.85) < 1e-9);
 });
 
+// --- peek mode: wave count ---
+test('sampleEnemyCount: fixed returns the clamped fixed value', () => {
+  assert.strictEqual(L.sampleEnemyCount('fixed', 3, 5, () => 0), 3);
+  assert.strictEqual(L.sampleEnemyCount('fixed', 9, 5, () => 0), 5); // clamp to max
+  assert.strictEqual(L.sampleEnemyCount('fixed', 0, 5, () => 0), 1); // clamp to >=1
+});
+
+test('sampleEnemyCount: random returns an integer in [1, max]', () => {
+  assert.strictEqual(L.sampleEnemyCount('random', 3, 5, () => 0), 1);
+  assert.strictEqual(L.sampleEnemyCount('random', 3, 5, () => 0.999), 5);
+  assert.strictEqual(L.sampleEnemyCount('random', 3, 5, () => 1), 5); // guard rng()==1
+});
+
 // --- shot timing ---
 test('classifyShotTimingByPeek labels hidden shots as fast', () => {
   assert.strictEqual(L.classifyShotTimingByPeek(false, false), 'fast');
