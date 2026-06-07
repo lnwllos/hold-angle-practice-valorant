@@ -267,3 +267,14 @@ test('isBehindCover true only inside the pocket on both axes', () => {
   assert.strictEqual(L.isBehindCover(-0.7, 0, 0.6, -0.5), false);   // symmetric
   assert.strictEqual(L.isBehindCover(0, -0.6, 0.6, -0.5), false);   // pushed forward past pocket
 });
+
+// --- peek mode: smoke cycle ---
+test('smokePhase covers, then fades, then stays clear', () => {
+  assert.deepStrictEqual(L.smokePhase(0, 3, 0.6), { phase: 'covered', opacity: 1 });
+  assert.deepStrictEqual(L.smokePhase(2.9, 3, 0.6), { phase: 'covered', opacity: 1 });
+  const mid = L.smokePhase(3.3, 3, 0.6); // halfway through the 0.6s fade
+  assert.strictEqual(mid.phase, 'fading');
+  assert.ok(Math.abs(mid.opacity - 0.5) < 1e-9);
+  assert.deepStrictEqual(L.smokePhase(3.6, 3, 0.6), { phase: 'clear', opacity: 0 });
+  assert.deepStrictEqual(L.smokePhase(10, 3, 0.6), { phase: 'clear', opacity: 0 });
+});

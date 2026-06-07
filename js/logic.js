@@ -166,6 +166,16 @@ function isBehindCover(x, z, halfWidth, behindZ) {
   return Math.abs(x) <= halfWidth && z >= behindZ;
 }
 
+// Smoke cycle for a wave: opaque for coverDur, then fades to clear over fadeDur, then stays
+// clear. Returns the current phase and the smoke's opacity for this frame.
+function smokePhase(elapsed, coverDur, fadeDur) {
+  if (elapsed < coverDur) return { phase: 'covered', opacity: 1 };
+  if (elapsed < coverDur + fadeDur) {
+    return { phase: 'fading', opacity: 1 - (elapsed - coverDur) / fadeDur };
+  }
+  return { phase: 'clear', opacity: 0 };
+}
+
 // --- Recoil (approximate Vandal pattern) ---
 // shotIndex is the 0-based index within a continuous burst. First shot is dead accurate.
 // Vertical climbs quickly over the first ~5 shots then slows; horizontal sway starts after.
@@ -194,7 +204,7 @@ if (typeof module !== 'undefined' && module.exports) {
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
     sampleSpawnDelay, sampleEnemyCount, randomTargetPlacements, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
     flashOverlayOpacity,
-    classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover,
+    classifyShotTimingByPeek, classifyShotTimingByLateral, classifyStationaryShot, isBehindCover, smokePhase,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
     statAccuracy, statHeadshotPct, statAvgReaction,
   };
