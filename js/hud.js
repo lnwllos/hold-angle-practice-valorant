@@ -6,6 +6,10 @@ function Hud(crosshairCfg) {
   const statsEl = document.getElementById('stats');
   const feedbackStack = document.getElementById('shot-feedback-stack');
   const overlay = document.getElementById('flash-overlay');
+  const nearsight = document.getElementById('nearsight-overlay');
+  const hitmarker = document.getElementById('hitmarker');
+  let nsElapsed = 0, nsDuration = 0, nsFactor = 0;
+  let hmTimer = null;
   const peekHint = document.getElementById('peek-hint');
   let blindElapsed = 0, blindDuration = 0, blindTint = '#ffffff';
 
@@ -26,6 +30,27 @@ function Hud(crosshairCfg) {
     overlay.style.background = blindElapsed < blindDuration * 0.15 ? blindTint : '#ffffff';
     overlay.style.opacity = String(flashOverlayOpacity(blindElapsed, blindDuration, VALO.FLASH.rampUp));
     if (blindElapsed >= blindDuration) { blindDuration = 0; overlay.style.opacity = '0'; }
+  }
+  function triggerNearsight(durationSec, factor, tintColor) {
+    nsDuration = Math.max(0, durationSec || 0);
+    nsElapsed = 0;
+    nsFactor = Math.max(0, Math.min(1, factor || 0));
+    if (nearsight && tintColor != null) nearsight.style.setProperty('--ns-tint', toCss(tintColor));
+  }
+  function updateNearsight(dt) {
+    if (!nearsight) return;
+    if (nsDuration <= 0) { nearsight.style.opacity = '0'; return; }
+    nsElapsed += dt;
+    const intensity = nearsightIntensity(nsElapsed, VALO.FLASH.rampUp * 3, nsDuration, 0.4) * nsFactor;
+    nearsight.style.opacity = String(intensity);
+    nearsight.style.setProperty('--ns-blur', (intensity * VALO.FLASH.nearsight.maxBlur).toFixed(2) + 'px');
+    if (nsElapsed >= nsDuration) { nsDuration = 0; nearsight.style.opacity = '0'; }
+  }
+  function showHitmarker() {
+    if (!hitmarker) return;
+    hitmarker.style.opacity = '1';
+    if (hmTimer) clearTimeout(hmTimer);
+    hmTimer = setTimeout(() => { hitmarker.style.opacity = '0'; }, 90);
   }
   const feedbackText = {
     fast: 'ยิงเร็วเกิน',
@@ -74,5 +99,6 @@ function Hud(crosshairCfg) {
   }
 
   drawCrosshair(crosshairCfg);
-  return { update, drawCrosshair, showShotFeedback, triggerBlind, updateBlind, setPeekHint };
+  return { update, drawCrosshair, showShotFeedback, triggerBlind, updateBlind,
+           triggerNearsight, updateNearsight, showHitmarker, setPeekHint };
 }
