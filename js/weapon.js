@@ -1,49 +1,36 @@
 // Vandal: hitscan from crosshair center on click/hold, gated to the real fire rate.
-// Resolves damage by hit zone, applies it to the current enemy's EHP, applies recoil to
-// the player view. Reports events to callbacks so game.js can update stats/state.
+// Fires at a SET of targets (each owns its own HP via applyDamage) plus a set of occluder
+// meshes (cover walls) that block shots. Reports raw raycast info to game.js, which decides
+// the per-mode feedback. No HP/EHP lives here anymore.
 //
-// deps: { camera, player, effects, getEnemy, getSettings, on }
-//   getEnemy()    -> current enemy object (from Enemy()) or null
-//   getSettings() -> { recoilOn, recoilIntensity }
-//   on            -> { shot(), hit(zone, isHead), kill() }
+// deps: { camera, player, effects, getShootables, getSettings, on }
+//   getShootables() -> { targets: [bot,...], occluders: [mesh,...] }
+//                      each bot: { hitboxes, alive, x, z, movementDir, fullPeeked, visible,
+//                                  applyDamage(zone)->killed, updateMatrixWorld() }
+//   getSettings()   -> { recoilOn, recoilIntensity }
+//   on              -> { shot(info), hit(zone, isHead), kill(bot) }
 function Weapon(deps) {
   const ray = new THREE.Raycaster();
   const center = new THREE.Vector2(0, 0);
   const interval = fireInterval(VALO.FIRE_RATE);
-  const ehpMax = VALO.ENEMY.hp + VALO.ENEMY.armor;
 
   let firing = false;
   let lastShot = -Infinity;
   let burstIndex = 0;     // shots since fire started (for recoil)
-  let ehp = ehpMax;
-  let trackedEnemy = null;
 
-  function onDown(e) {
-    if (e.button === 0 && document.pointerLockElement) { firing = true; }
-  }
-  function onUp(e) {
-    if (e.button === 0) { firing = false; burstIndex = 0; }
-  }
+  function onDown(e) { if (e.button === 0 && document.pointerLockElement) firing = true; }
+  function onUp(e) { if (e.button === 0) { firing = false; burstIndex = 0; } }
   document.addEventListener('mousedown', onDown);
   document.addEventListener('mouseup', onUp);
 
-  // Reset EHP/burst when a fresh enemy appears.
-  function syncEnemy() {
-    const en = deps.getEnemy();
-    if (en !== trackedEnemy) { trackedEnemy = en; ehp = ehpMax; }
-    return en;
-  }
-
   function update(dt, nowSec) {
-    const en = syncEnemy();
     if (!firing) return;
     if (!canFire(lastShot, nowSec, interval)) return;
     lastShot = nowSec;
-    fireOne(en);
+    fireOne();
   }
 
-  function fireOne(en) {
-    // recoil kick: first shot (index 0) has no offset; later shots climb/sway
+  function fireOne() {
     const s = deps.getSettings();
     if (s.recoilOn) {
       const r = recoilOffset(burstIndex, s.recoilIntensity);
@@ -51,40 +38,48 @@ function Weapon(deps) {
     }
     burstIndex += 1;
 
-    ray.setFromCamera(center, deps.camera);
-    let hits = [];
-    let aimX = en ? rayXAtZ(ray.ray, en.z) : NaN;
-    let timing = 'fast';
+    const { targets, occluders } = deps.getShootables();
+    const alive = targets.filter(t => t.alive);
+    const primary = alive[0] || null; // hold-angle has exactly one; drives miss-side feedback
 
-    if (!en || !en.alive || !en.visible) {
-      timing = classifyShotTimingByLateral(false, null, aimX, en ? en.x : NaN, en ? en.movementDir : 0, false);
-      deps.on.shot({ timing });
-      if (deps.effects) { deps.effects.playShot(); deps.effects.addTracer(ray.ray, null); }
-      return;
+    ray.setFromCamera(center, deps.camera);
+
+    const meshes = [];
+    alive.forEach(t => { if (t.updateMatrixWorld) t.updateMatrixWorld(); t.hitboxes.forEach(h => meshes.push(h)); });
+    occluders.forEach(o => meshes.push(o));
+
+    const hits = ray.intersectObjects(meshes, false);
+    const nearest = hits[0];
+
+    // aimX defaults to where the ray would cross the primary target's depth (miss-side calc).
+    let aimX = primary ? rayXAtZ(ray.ray, primary.z) : NaN;
+    let hitZone = null;
+    let bot = null;
+
+    if (nearest) {
+      const owner = nearest.object.userData.bot;
+      const zone = nearest.object.userData.zone;
+      if (owner && zone) { bot = owner; hitZone = zone; aimX = nearest.point.x; }
+      // else: nearest is an occluder (cover wall) -> blocked shot, treated as a miss.
     }
 
-    if (en.updateMatrixWorld) en.updateMatrixWorld();
-    hits = ray.intersectObjects(en.hitboxes, false);
-    const hit = hits[0];
-    if (hit) aimX = hit.point.x;
-    timing = classifyShotTimingByLateral(
-      true,
-      hit && hit.object.userData.zone,
+    deps.on.shot({
+      hitZone,
+      isHead: hitZone === 'head',
       aimX,
-      en.x,
-      en.movementDir,
-      en.fullPeeked,
-      VALO.AIM_FEEDBACK.perfectHeadHalfWidth
-    );
-    deps.on.shot({ timing });
+      botX: primary ? primary.x : NaN,
+      movementDir: primary ? primary.movementDir : 0,
+      fullPeeked: primary ? primary.fullPeeked : false,
+      visible: primary ? primary.visible : false,
+    });
 
-    if (deps.effects) { deps.effects.playShot(); deps.effects.addTracer(ray.ray, hits[0] && hits[0].point); }
-    if (hits.length === 0) return;
-    const zone = hits[0].object.userData.zone;
-    const isHead = zone === 'head';
-    deps.on.hit(zone, isHead);
-    ehp = applyDamage(ehp, damageForZone(zone, VALO.VANDAL));
-    if (ehp <= 0) { en.kill(); deps.on.kill(); }
+    if (deps.effects) { deps.effects.playShot(); deps.effects.addTracer(ray.ray, nearest ? nearest.point : null); }
+
+    if (bot && hitZone) {
+      deps.on.hit(hitZone, hitZone === 'head');
+      const killed = bot.applyDamage(hitZone);
+      if (killed) deps.on.kill(bot);
+    }
   }
 
   function rayXAtZ(rayObj, z) {

@@ -10,6 +10,8 @@
   let state = 'waiting';   // 'waiting' | 'active' | 'flashing' | 'dead'
   let respawnAt = 0;       // wall-clock seconds when the next enemy spawns
   let visibleAt = null;    // wall-clock seconds the current enemy became visible (reaction clock)
+  let mode = 'hold';       // 'hold' | 'wallpeek' | 'smoke'  (peek wiring added in a later task)
+  let peekMode = null;     // PeekMode instance when mode !== 'hold'
 
   // Flash-round lifecycle (a flash pops, then the held enemy peeks)
   let flash = null;
@@ -27,20 +29,38 @@
       camera: three.camera,
       player,
       effects,
-      getEnemy: () => enemy,
+      getShootables: () => {
+        if (mode === 'hold') {
+          return { targets: enemy ? [enemy] : [], occluders: enemy ? [enemy.wall] : [] };
+        }
+        return {
+          targets: peekMode ? peekMode.getTargets() : [],
+          occluders: peekMode ? peekMode.occluders() : [],
+        };
+      },
       getSettings: () => settings.weaponCfg(),
       on: {
         shot: info => {
           recordShot(stats);
-          hud.showShotFeedback(info.timing);
+          const kind = mode === 'hold'
+            ? classifyShotTimingByLateral(info.visible, info.hitZone, info.aimX, info.botX,
+                info.movementDir, info.fullPeeked, VALO.AIM_FEEDBACK.perfectHeadHalfWidth)
+            : classifyStationaryShot(info.hitZone);
+          if (kind) hud.showShotFeedback(kind);
         },
         hit: (zone, isHead) => recordHit(stats, isHead),
         kill: () => {
-          const reaction = visibleAt != null ? (performance.now() / 1000 - visibleAt) * 1000 : 0;
-          recordKill(stats, reaction);
-          effects.playKill();
-          state = 'dead';
-          respawnAt = performance.now() / 1000 + resolveRespawnDelay();
+          if (mode === 'hold') {
+            const reaction = visibleAt != null ? (performance.now() / 1000 - visibleAt) * 1000 : 0;
+            recordKill(stats, reaction);
+            effects.playKill();
+            state = 'dead';
+            respawnAt = performance.now() / 1000 + resolveRespawnDelay();
+          } else {
+            recordKill(stats, 0); // peek modes do not time reactions
+            effects.playKill();
+            // PeekMode detects the wave being cleared in its own update().
+          }
         },
       },
     });

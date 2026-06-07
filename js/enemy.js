@@ -26,6 +26,7 @@ function Enemy(scene, cfg) {
   // Bot body parts (shared with peek-mode targets).
   const { group, hitboxes } = makeBotParts();
   scene.add(group);
+  let ehp = VALO.ENEMY.hp + VALO.ENEMY.armor;
 
   // Lateral motion at the enemy's depth: hidden behind the wall (outer side), emerge inward.
   const hiddenX = innerEdge + side * 1.2;            // behind the wall (occluded)
@@ -71,8 +72,15 @@ function Enemy(scene, cfg) {
     disposeBotObject(wall);
   }
 
-  return {
-    update, kill, dispose,
+  function applyDamage(zone) {
+    if (!alive) return false;
+    ehp -= damageForZone(zone, VALO.VANDAL);
+    if (ehp <= 0) { kill(); return true; }
+    return false;
+  }
+
+  const api = {
+    update, kill, dispose, applyDamage,
     hitboxes,
     updateMatrixWorld: () => group.updateMatrixWorld(true),
     get visible() { return visible; },
@@ -81,5 +89,8 @@ function Enemy(scene, cfg) {
     get x() { return x; },
     get z() { return z; },
     get movementDir() { return movementDir; },
+    get wall() { return wall; },
   };
+  hitboxes.forEach(h => { h.userData.bot = api; });
+  return api;
 }
