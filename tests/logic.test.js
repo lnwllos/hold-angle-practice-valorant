@@ -215,3 +215,36 @@ test('flashOverlayOpacity ramps up, then decays, then zero', () => {
   // halfway through decay: decaySpan=0.95, remain=0.475 -> elapsed=0.525 -> 0.5
   assert.ok(Math.abs(L.flashOverlayOpacity(0.525, 1.0, 0.05) - 0.5) < 1e-9);
 });
+
+// --- peek mode: target placements ---
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+test('randomTargetPlacements returns count items inside bounds, min-separated', () => {
+  const bounds = { spreadX: 5, depthMin: 12, depthMax: 18, minSep: 1.2 };
+  const out = L.randomTargetPlacements(4, bounds, mulberry32(42));
+  assert.strictEqual(out.length, 4);
+  for (const p of out) {
+    assert.ok(p.x >= -5 - 1e-9 && p.x <= 5 + 1e-9, `x in range: ${p.x}`);
+    assert.ok(p.z <= -12 + 1e-9 && p.z >= -18 - 1e-9, `z in range: ${p.z}`);
+  }
+  for (let i = 0; i < out.length; i++) {
+    for (let j = i + 1; j < out.length; j++) {
+      const dx = out[i].x - out[j].x, dz = out[i].z - out[j].z;
+      assert.ok(Math.hypot(dx, dz) >= 1.2 - 1e-9, `pair ${i},${j} separated`);
+    }
+  }
+});
+
+test('randomTargetPlacements still returns count when space is too tight', () => {
+  const bounds = { spreadX: 0.1, depthMin: 12, depthMax: 12.1, minSep: 5 };
+  const out = L.randomTargetPlacements(5, bounds, mulberry32(7));
+  assert.strictEqual(out.length, 5); // never throws / never infinite-loops
+});

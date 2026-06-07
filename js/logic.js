@@ -59,6 +59,32 @@ function sampleEnemyCount(mode, fixed, max, rng) {
   return Math.min(hi, 1 + Math.floor(rng() * hi));
 }
 
+// --- Peek mode: target placements ---
+// Place `count` bots at random {x, z} within bounds, rejection-sampling so no two are
+// closer than minSep. Attempts are capped; the last sample is used if no gap is found, so
+// the function always returns exactly `count` placements (never loops forever).
+// bounds: { spreadX, depthMin, depthMax, minSep }. x in [-spreadX, spreadX]; z in [-depthMax, -depthMin].
+function randomTargetPlacements(count, bounds, rng) {
+  const { spreadX, depthMin, depthMax, minSep } = bounds;
+  const sep2 = minSep * minSep;
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    let pick = null;
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const x = (rng() * 2 - 1) * spreadX;
+      const z = -(depthMin + rng() * (depthMax - depthMin));
+      pick = { x, z };
+      const ok = out.every(p => {
+        const dx = p.x - x, dz = p.z - z;
+        return dx * dx + dz * dz >= sep2;
+      });
+      if (ok) break;
+    }
+    out.push(pick);
+  }
+  return out;
+}
+
 // --- Flash: agent selection and round decision ---
 // enabledKeys: array of 'breach'|'phoenix'|'yoru' currently enabled. rng() -> [0,1).
 function pickFlashAgent(enabledKeys, rng) {
@@ -151,7 +177,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     damageForZone, applyDamage, peekWeight, samplePeekWidth,
     degPerCount, cm360, effectiveDeg, fireInterval, canFire,
-    sampleSpawnDelay, sampleEnemyCount, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
+    sampleSpawnDelay, sampleEnemyCount, randomTargetPlacements, pickFlashAgent, shouldFlashRound, blindFactor, blindDuration,
     flashOverlayOpacity,
     classifyShotTimingByPeek, classifyShotTimingByLateral,
     recoilOffset, makeStats, recordShot, recordHit, recordKill,
