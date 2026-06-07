@@ -100,8 +100,9 @@ distance }`. Geometry reuses the enemy's corner: `innerEdge = side * 1.0`, cover
   drives opacity each frame (no CSS transition).
 - `hud.js`: `triggerBlind(durationSec, tintColor)` starts an internal blind timer and sets
   the overlay tint; `update(dt)` advances it and sets `opacity` via `flashOverlayOpacity`.
-  The first `rampUp` window is tinted with the agent color, then white, then fades out.
-  (The in-game blind is white; the agent **color** is carried by the orb/burst in the scene.)
+  For roughly the first 15% of the blind it carries the agent color (a brief colored wash),
+  then switches to white and fades out. (The in-game blind is white; the agent **color** is
+  carried primarily by the orb/burst in the scene — `rampUp` is too brief to perceive a tint.)
 
 ### 5. Synthesized sound — `effects.js`
 
