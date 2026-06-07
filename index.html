@@ -111,8 +111,7 @@
     #flash-overlay { position: absolute; inset: 0; background: #ffffff; opacity: 0;
       pointer-events: none; z-index: 20; }
     #nearsight-overlay { position: absolute; inset: 0; opacity: 0; pointer-events: none; z-index: 19;
-      background: radial-gradient(circle at 50% 50%,
-        rgba(0,0,0,0) 16%, var(--ns-tint, rgba(120,120,140,0.25)) 40%, rgba(6,6,10,0.94) 96%);
+      background: var(--ns-tint, rgba(120,120,140,0.4));
       -webkit-backdrop-filter: blur(var(--ns-blur, 0px)); backdrop-filter: blur(var(--ns-blur, 0px)); }
     #hitmarker { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px;
       transform: translate(-50%, -50%) rotate(45deg); opacity: 0; pointer-events: none; z-index: 21; }
