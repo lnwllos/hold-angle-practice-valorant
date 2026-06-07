@@ -16,6 +16,8 @@ function Settings(onChange) {
     flashBreach: false,
     flashPhoenix: false,
     flashYoru: false,
+    flashEyeOrb: false,
+    flashTrackDrone: false,
     flashChance: 0.3,   // fraction of spawns that become flash rounds (needs an agent enabled)
     flashSound: true,
     trainingMode: 'hold',     // 'hold' | 'wallpeek' | 'smoke'
@@ -126,6 +128,10 @@ function Settings(onChange) {
       row('Flash: Breach (Flashpoint)', checkbox(s.flashBreach, v => s.flashBreach = v));
       row('Flash: Phoenix (Curveball)', checkbox(s.flashPhoenix, v => s.flashPhoenix = v));
       row('Flash: Yoru (Blindside)', checkbox(s.flashYoru, v => s.flashYoru = v));
+      row('Flash: Eye Blind Orb (ยิงทำลาย)', checkbox(s.flashEyeOrb, v => s.flashEyeOrb = v),
+        'Destructible nearsight orb — flick and shoot it before it arms.');
+      row('Flash: Tracking Blind Drone (ยิงทำลาย)', checkbox(s.flashTrackDrone, v => s.flashTrackDrone = v),
+        'Moving scanner — track and shoot it before it locks on and fires.');
       row('Flash frequency', range(0, 1, 0.05, s.flashChance, v => Math.round(v * 100) + '%',
         v => s.flashChance = v), 'Chance a spawn is a flash round (needs an agent enabled).');
       row('Flash sound', checkbox(s.flashSound, v => s.flashSound = v));
